@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monthly Payments</title>
+
+  <style>
+    html {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 22px;
+    }
+
+    body {
+      margin: 0;
+      background: #000;
+      color: #f5f5f5;
+    }
+
+    .app {
+      padding: 26px 10px 80px;
+    }
+
+    h1 {
+      font-size: 34px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #b0b0b8;
+      margin-bottom: 26px;
+    }
+
+    h2 {
+      margin: 20px 4px 8px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .bill {
+      background: #1c1c1e;
+      padding: 26px;
+      border-bottom: 2px solid #2c2c2e;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .bill-paid {
+      background: #234223;
+      text-decoration: line-through;
+      opacity: 0.8;
+    }
+
+    .bill-name {
+      font-size: 28px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .badge-overdue {
+      background: #ff3b30;
+      color: #fff;
+    }
+
+    .badge-today {
+      background: #ff9f0a;
+      color: #000;
+    }
+
+    input {
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      background: #2c2c2e;
+      color: #fff;
+      font-size: 24px;
+    }
+
+    button {
+      padding: 18px;
+      border-radius: 14px;
+      border: none;
+      font-size: 26px;
+      font-weight: 800;
+      background: #ff9f0a;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #3a3a3c;
+      color: #aaa;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <h1>Monthly Payments</h1>
+    <div class="subtitle">Tap, enter amount, Save.</div>
+
+    <div class="section">
+      <h2>Pay immediately</h2>
+      <div id="payImmediately"></div>
+    </div>
+
+    <div class="section">
+      <h2>Upcoming (next 5 days)</h2>
+      <div id="upcoming"></div>
+    </div>
+
+    <div class="section">
+      <h2>Already paid</h2>
+      <div id="paid"></div>
+    </div>
+  </div>
+
+  <script>
+    async function fetchStatus() {
+      const res = await fetch("/api/GetStatus");
+      if (!res.ok) throw new Error("Failed to load status");
+      return res.json();
+    }
+
+    async function logPayment(billId, amount) {
+      const res = await fetch("/api/LogPayment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billId, amount })
+      });
+      if (!res.ok) throw new Error("Failed to save payment");
+    }
+
+    function renderList(containerId, list, paid = false) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      if (!list.length) {
+        container.textContent = "Nothing here.";
+        return;
+      }
+
+      list.forEach(bill => {
+        const div = document.createElement("div");
+        div.className = "bill" + (paid ? " bill-paid" : "");
+
+        const name = document.createElement("div");
+        name.className = "bill-name";
+        name.textContent = bill.name;
+
+        if (!paid && bill.daysOverdue !== undefined) {
+          const badge = document.createElement("span");
+          badge.className = "badge " + (bill.daysOverdue > 0 ? "badge-overdue" : "badge-today");
+          badge.textContent = bill.daysOverdue > 0
+            ? `${bill.daysOverdue}d overdue`
+            : "Due today";
+          name.appendChild(badge);
+        }
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.placeholder = bill.lastAmount ? bill.lastAmount : "Amount";
+
+        const btn = document.createElement("button");
+        btn.textContent = paid ? "Paid" : "Save";
+        btn.disabled = paid;
+
+        btn.onclick = async () => {
+          btn.disabled = true;
+          await logPayment(bill.id, Number(input.value));
+          load();
+        };
+
+        div.append(name, input, btn);
+        container.appendChild(div);
+      });
+    }
+
+    async function load() {
+      const data = await fetchStatus();
+      renderList("payImmediately", data.payImmediately);
+      renderList("upcoming", data.upcoming);
+      renderList("paid", data.paid, true);
+    }
+
+    load();
+  </script>
+</body>
+</html>
