@@ -1,0 +1,34 @@
+{
+  "bindings": [
+    {
+      "authLevel": "function",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": ["get"]
+    },
+    {
+      "type": "cosmosDB",
+      "direction": "in",
+      "name": "bills",
+      "databaseName": "expense-app-db",
+      "containerName": "bills",
+      "connection": "CosmosDB",
+      "sqlQuery": "SELECT * FROM c WHERE c.isActive = true"
+    },
+    {
+      "type": "cosmosDB",
+      "direction": "in",
+      "name": "payments",
+      "databaseName": "expense-app-db",
+      "containerName": "payments",
+      "connection": "CosmosDB",
+      "sqlQuery": "SELECT * FROM c"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    }
+  ]
+}
