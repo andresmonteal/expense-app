@@ -65,6 +65,11 @@
       flex-wrap: wrap;
     }
 
+    .auto-pay {
+      font-size: 20px;
+      opacity: 0.75;
+    }
+
     .badge {
       padding: 4px 10px;
       border-radius: 999px;
@@ -197,7 +202,18 @@
 
         const name = document.createElement("div");
         name.className = "bill-name";
-        name.textContent = bill.name;
+
+        const title = document.createElement("span");
+        title.textContent = bill.name;
+        name.appendChild(title);
+
+        if (bill.autoPay === true) {
+          const auto = document.createElement("span");
+          auto.className = "auto-pay";
+          auto.title = "Automatic payment enabled";
+          auto.textContent = "⚙️";
+          name.appendChild(auto);
+        }
 
         if (!paid && bill.daysOverdue !== undefined) {
           const badge = document.createElement("span");
