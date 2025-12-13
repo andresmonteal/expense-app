@@ -274,7 +274,10 @@
 
     async function load() {
       const data = await fetchStatus();
-      renderList("payImmediately", data.payImmediately);
+      const payNowSorted = [...data.payImmediately].sort(
+        (a, b) => (b.daysOverdue ?? 0) - (a.daysOverdue ?? 0)
+      );
+      renderList("payImmediately", payNowSorted);
       renderList("upcoming", data.upcoming);
       renderList("paid", data.paid, true);
 
