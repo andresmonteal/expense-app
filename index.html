@@ -6,54 +6,31 @@
   <title>Monthly Payments</title>
 
   <style>
-    html {
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 22px;
-    }
-
-    body {
-      margin: 0;
-      background: #000;
-      color: #f5f5f5;
-    }
-
-    .app {
-      padding: 26px 10px 80px;
-    }
-
-    h1 {
-      font-size: 34px;
-      font-weight: 800;
-      margin-bottom: 10px;
-    }
-
-    .subtitle {
-      color: #b0b0b8;
-      margin-bottom: 26px;
-    }
-
-    h2 {
-      font-size: 24px;
-      font-weight: 700;
-    }
-
-    .section {
-      margin-bottom: 20px;
-    }
+    html { font-family: system-ui, -apple-system, sans-serif; font-size: 22px; }
+    body { margin: 0; background: #000; color: #f5f5f5; }
+    .app { padding: 26px 10px 80px; }
+    h1 { font-size: 34px; font-weight: 800; margin-bottom: 10px; }
+    .subtitle { color: #b0b0b8; margin-bottom: 26px; }
+    h2 { font-size: 24px; font-weight: 700; }
+    .section { margin-bottom: 20px; }
 
     .bill {
       background: #1c1c1e;
-      padding: 26px;
+      padding: 22px 26px;
       border-bottom: 2px solid #2c2c2e;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
+    .bill:active { opacity: 0.85; }
 
     .bill-paid {
       background: #234223;
       text-decoration: line-through;
       opacity: 0.8;
+      cursor: default;
     }
 
     .bill-name {
@@ -65,9 +42,12 @@
       flex-wrap: wrap;
     }
 
-    .auto-pay {
-      font-size: 20px;
-      opacity: 0.75;
+    .meta {
+      color: #b0b0b8;
+      font-size: 18px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
     }
 
     .badge {
@@ -76,39 +56,12 @@
       font-size: 16px;
       font-weight: 700;
     }
+    .badge-overdue { background: #ff3b30; color: #fff; }
+    .badge-today { background: #ff9f0a; color: #000; }
 
-    .badge-overdue {
-      background: #ff3b30;
-      color: #fff;
-    }
-
-    .badge-today {
-      background: #ff9f0a;
-      color: #000;
-    }
-
-    input {
-      padding: 16px;
-      border-radius: 14px;
-      border: none;
-      background: #2c2c2e;
-      color: #fff;
-      font-size: 24px;
-    }
-
-    button {
-      padding: 18px;
-      border-radius: 14px;
-      border: none;
-      font-size: 26px;
-      font-weight: 800;
-      background: #ff9f0a;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      background: #3a3a3c;
-      color: #aaa;
+    .auto-pay {
+      font-size: 20px;
+      opacity: 0.75;
     }
 
     /* Collapsible paid section */
@@ -120,23 +73,15 @@
       cursor: pointer;
       user-select: none;
     }
-
-    .chevron {
-      width: 24px;
-      text-align: center;
-      font-weight: 900;
-    }
-
-    .paid-container.is-collapsed {
-      display: none;
-    }
+    .chevron { width: 24px; text-align: center; font-weight: 900; }
+    .paid-container.is-collapsed { display: none; }
   </style>
 </head>
 
 <body>
   <div class="app">
     <h1>Monthly Payments</h1>
-    <div class="subtitle">Tap, enter amount, Save.</div>
+    <div class="subtitle">Tap a bill to log a payment.</div>
 
     <div class="section">
       <h2>Pay immediately</h2>
@@ -149,20 +94,10 @@
     </div>
 
     <div class="section">
-      <div
-        class="collapsible-header"
-        id="paidHeader"
-        role="button"
-        tabindex="0"
-        aria-expanded="false"
-      >
+      <div class="collapsible-header" id="paidHeader" role="button" tabindex="0" aria-expanded="false">
         <span class="chevron" id="paidChevron">▸</span>
         <h2 style="margin:0;">Already paid</h2>
-        <span
-          class="subtitle"
-          id="paidCount"
-          style="margin:0; font-size:18px;"
-        ></span>
+        <span class="subtitle" id="paidCount" style="margin:0; font-size:18px;"></span>
       </div>
 
       <div id="paid" class="paid-container is-collapsed"></div>
@@ -178,13 +113,13 @@
       return res.json();
     }
 
-    async function logPayment(billId, amount) {
-      const res = await fetch("/api/LogPayment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billId, amount })
+    function toPayUrl(bill) {
+      const params = new URLSearchParams({
+        billId: bill.id,
+        name: bill.name || "",
+        lastAmount: String(bill.lastAmount || 0),
       });
-      if (!res.ok) throw new Error("Failed to save payment");
+      return `/pay.html?${params.toString()}`;
     }
 
     function renderList(containerId, list, paid = false) {
@@ -218,27 +153,23 @@
         if (!paid && bill.daysOverdue !== undefined) {
           const badge = document.createElement("span");
           badge.className = "badge " + (bill.daysOverdue > 0 ? "badge-overdue" : "badge-today");
-          badge.textContent = bill.daysOverdue > 0
-            ? `${bill.daysOverdue}d overdue`
-            : "Due today";
+          badge.textContent = bill.daysOverdue > 0 ? `${bill.daysOverdue}d overdue` : "Due today";
           name.appendChild(badge);
         }
 
-        const input = document.createElement("input");
-        input.type = "number";
-        input.placeholder = bill.lastAmount ? bill.lastAmount : "Amount";
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.innerHTML = `
+          <span>Last: ${Number(bill.lastAmount || 0).toFixed(2)}</span>
+          <span>Due: ${bill.dueDate || ""}</span>
+        `;
 
-        const btn = document.createElement("button");
-        btn.textContent = paid ? "Paid" : "Save";
-        btn.disabled = paid;
+        div.append(name, meta);
 
-        btn.onclick = async () => {
-          btn.disabled = true;
-          await logPayment(bill.id, Number(input.value));
-          load();
-        };
+        if (!paid) {
+          div.onclick = () => { window.location.href = toPayUrl(bill); };
+        }
 
-        div.append(name, input, btn);
         container.appendChild(div);
       });
     }
@@ -274,16 +205,17 @@
 
     async function load() {
       const data = await fetchStatus();
-      const payNowSorted = [...data.payImmediately].sort(
+
+      // Sort pay immediately by most overdue first
+      const payNowSorted = [...(data.payImmediately || [])].sort(
         (a, b) => (b.daysOverdue ?? 0) - (a.daysOverdue ?? 0)
       );
+
       renderList("payImmediately", payNowSorted);
-      renderList("upcoming", data.upcoming);
-      renderList("paid", data.paid, true);
+      renderList("upcoming", data.upcoming || []);
+      renderList("paid", data.paid || [], true);
 
-      const paidCount = document.getElementById("paidCount");
-      paidCount.textContent = `(${data.paid.length})`;
-
+      document.getElementById("paidCount").textContent = `(${(data.paid || []).length})`;
       setupPaidToggle();
     }
 
