@@ -104,6 +104,10 @@ function isPaidInWindow(payments, billId, startUtc, endUtc) {
   return false;
 }
 
+function subtractDays(dateUtc, days) {
+  return new Date(dateUtc.getTime() - days * DAY_MS);
+}
+
 module.exports = async function (context, req, bills, payments) {
   try {
     const todayUtc = todayBogotaUtcDateOnly();
@@ -137,24 +141,38 @@ module.exports = async function (context, req, bills, payments) {
           continue;
         }
 
-        // Define a "cycle" anyway for consistency (rarely matters before start)
         cycleStartUtc = startUtc;
         cycleEndUtc = addByFrequency(startUtc, unit, interval);
       } else {
-        // Started: use current cycle due date (for overdue) and next due (for cycle end)
+        // Started bill
         const cycle = computeCycle(todayUtc, startUtc, unit, interval);
         if (!cycle) continue;
 
         cycleStartUtc = cycle.currentDue;
         cycleEndUtc = cycle.nextDue;
-        dueUtc = cycleStartUtc; // this is the due date we compare to today for overdue
-
-        // This bill is relevant now if either overdue/due-today OR next due is within 5 days
-        // Overdue/due-today is determined by dueUtc <= today (always true here)
-        // Upcoming is determined by *next* due date (cycleEndUtc) being within 5 days AND not overdue.
+        dueUtc = cycleStartUtc;
       }
 
-      const paidThisCycle = isPaidInWindow(payments || [], b.id, cycleStartUtc, cycleEndUtc);
+      let paidThisCycle;
+
+      if (todayUtc < startUtc) {
+        // ✅ allow pre-paying first cycle
+        const prepayWindowStartUtc = subtractDays(startUtc, 35);
+        paidThisCycle = isPaidInWindow(
+          payments || [],
+          b.id,
+          prepayWindowStartUtc,
+          cycleEndUtc
+        );
+      } else {
+        paidThisCycle = isPaidInWindow(
+          payments || [],
+          b.id,
+          cycleStartUtc,
+          cycleEndUtc
+        );
+      }
+
       const lastAmount = lastAmountMap[String(b.id)]?.amount ?? 0;
 
       const out = {
