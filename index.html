@@ -33,9 +33,12 @@
     }
 
     h2 {
-      margin: 20px 4px 8px;
       font-size: 24px;
       font-weight: 700;
+    }
+
+    .section {
+      margin-bottom: 20px;
     }
 
     .bill {
@@ -103,8 +106,24 @@
       color: #aaa;
     }
 
-    .section {
-      margin-bottom: 20px;
+    /* Collapsible paid section */
+    .collapsible-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 4px 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .chevron {
+      width: 24px;
+      text-align: center;
+      font-weight: 900;
+    }
+
+    .paid-container.is-collapsed {
+      display: none;
     }
   </style>
 </head>
@@ -125,12 +144,29 @@
     </div>
 
     <div class="section">
-      <h2>Already paid</h2>
-      <div id="paid"></div>
+      <div
+        class="collapsible-header"
+        id="paidHeader"
+        role="button"
+        tabindex="0"
+        aria-expanded="false"
+      >
+        <span class="chevron" id="paidChevron">▸</span>
+        <h2 style="margin:0;">Already paid</h2>
+        <span
+          class="subtitle"
+          id="paidCount"
+          style="margin:0; font-size:18px;"
+        ></span>
+      </div>
+
+      <div id="paid" class="paid-container is-collapsed"></div>
     </div>
   </div>
 
   <script>
+    let paidOpen = false; // collapsed by default
+
     async function fetchStatus() {
       const res = await fetch("/api/GetStatus");
       if (!res.ok) throw new Error("Failed to load status");
@@ -191,11 +227,45 @@
       });
     }
 
+    function updatePaidUI() {
+      const paidEl = document.getElementById("paid");
+      const chevron = document.getElementById("paidChevron");
+      const header = document.getElementById("paidHeader");
+
+      paidEl.classList.toggle("is-collapsed", !paidOpen);
+      chevron.textContent = paidOpen ? "▾" : "▸";
+      header.setAttribute("aria-expanded", String(paidOpen));
+    }
+
+    function setupPaidToggle() {
+      const header = document.getElementById("paidHeader");
+
+      header.onclick = () => {
+        paidOpen = !paidOpen;
+        updatePaidUI();
+      };
+
+      header.onkeydown = e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          paidOpen = !paidOpen;
+          updatePaidUI();
+        }
+      };
+
+      updatePaidUI();
+    }
+
     async function load() {
       const data = await fetchStatus();
       renderList("payImmediately", data.payImmediately);
       renderList("upcoming", data.upcoming);
       renderList("paid", data.paid, true);
+
+      const paidCount = document.getElementById("paidCount");
+      paidCount.textContent = `(${data.paid.length})`;
+
+      setupPaidToggle();
     }
 
     load();
