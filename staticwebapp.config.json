@@ -1,5 +1,6 @@
 {
   "routes": [
+    { "route": "/.auth/*", "allowedRoles": ["anonymous"] },
     { "route": "/api/*", "allowedRoles": ["authenticated"] },
     { "route": "/*", "allowedRoles": ["authenticated"] }
   ]
