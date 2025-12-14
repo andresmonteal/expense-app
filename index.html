@@ -254,12 +254,9 @@
 
   <!-- Frosted bottom bar -->
   <div class="bottom-glass">
-    <div class="pill clickable" onclick="goToExpenses()">
-      <p class="hint">Tap a bill to log a payment</p>
-        <div style="display:flex; gap:12px; align-items:center;">
-          <a href="/.auth/logout" class="auth-link muted">Sign out</a>
-        </div>
-      <span class="right">Expenses →</span>
+    <div class="pill">
+      <a href="/.auth/logout" class="auth-link muted">Sign out</a>
+      <span class="right clickable" onclick="goToExpenses()">Expenses →</span>
     </div>
   </div>
 
