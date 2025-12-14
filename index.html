@@ -203,6 +203,14 @@
       font-size: 14px;
       white-space: nowrap;
     }
+    
+    .bottom-glass .pill.clickable {
+      cursor: pointer;
+    }
+
+    .bottom-glass .pill.clickable:active {
+      transform: scale(0.98);
+    }
   </style>
 </head>
 
@@ -234,9 +242,9 @@
 
   <!-- Frosted bottom bar -->
   <div class="bottom-glass">
-    <div class="pill">
+    <div class="pill clickable" onclick="goToExpenses()">
       <p class="hint">Tap a bill to log a payment</p>
-      <span class="right">Monthly</span>
+      <span class="right">Expenses →</span>
     </div>
   </div>
 
@@ -410,6 +418,10 @@
       setupPaidToggle();
     }
 
+    function goToExpenses() {
+      window.location.href = "/expenses.html";
+    }
+    
     load();
   </script>
 </body>
