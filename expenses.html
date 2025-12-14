@@ -557,9 +557,8 @@
       setCountText("Loading…");
       cachedBills = await getBills();
 
-      // Show only items typed as "expense"
-      const expensesOnly = cachedBills.filter(x => (x?.type || "") === "expense");
-
+      const expensesOnly = cachedBills;
+      
       renderList(expensesOnly);
       setCountText(`${expensesOnly.length} item${expensesOnly.length === 1 ? "" : "s"}`);
     }
