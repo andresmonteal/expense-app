@@ -70,13 +70,13 @@ module.exports = async function (context, req) {
         return;
     }
 
-    // IMPORTANT: this must match the Cosmos output binding name in function.json ("bills")
-    context.bindings.bills = bill;
-
     const billWithOwner = {
         ...bill,
         ownerId
     };
+
+    // IMPORTANT: this must match the Cosmos output binding name in function.json ("bills")
+    context.bindings.bills = bill;
 
     context.res = {
       status: 201,
