@@ -6,38 +6,14 @@
   <title>Expenses</title>
 
   <style>
-    html {
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 20px;
-    }
+    html { font-family: system-ui, -apple-system, sans-serif; font-size: 20px; }
+    body { margin: 0; background: #000; color: #f5f5f5; }
 
-    body {
-      margin: 0;
-      background: #000;
-      color: #f5f5f5;
-    }
+    .app { padding: 22px 10px 130px; } /* space for frosted bar */
 
-    .app {
-      padding: 22px 10px 130px; /* space for frosted bar */
-    }
-
-    h1 {
-      font-size: 32px;
-      font-weight: 800;
-      margin: 0 0 6px;
-    }
-
-    .subtitle {
-      color: #b0b0b8;
-      margin: 0 0 18px;
-      font-size: 16px;
-    }
-
-    .section-title {
-      font-size: 22px;
-      font-weight: 700;
-      margin: 18px 4px 10px;
-    }
+    h1 { font-size: 32px; font-weight: 800; margin: 0 0 6px; }
+    .subtitle { color: #b0b0b8; margin: 0 0 18px; font-size: 16px; }
+    .section-title { font-size: 22px; font-weight: 700; margin: 18px 4px 10px; }
 
     /* List rows */
     .row {
@@ -47,6 +23,13 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .row:active { opacity: 0.88; }
+    .row.editing {
+      outline: 2px solid rgba(255, 159, 10, 0.35);
+      outline-offset: -2px;
     }
 
     .row-top {
@@ -56,12 +39,7 @@
       gap: 12px;
     }
 
-    .name {
-      font-size: 22px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
+    .name { font-size: 22px; font-weight: 700; line-height: 1.2; }
     .type {
       color: #b0b0b8;
       font-size: 14px;
@@ -81,19 +59,14 @@
       line-height: 1.2;
     }
 
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Inline create form */
+    /* Inline create/edit form */
     .form-card {
       background: rgba(28, 28, 30, 0.75);
       border: 1px solid rgba(255, 255, 255, 0.10);
       border-radius: 18px;
       padding: 14px;
       margin: 12px 0 0;
+      cursor: default;
     }
 
     .form-grid {
@@ -121,6 +94,28 @@
       outline: none;
     }
 
+    .checks {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .check {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 0;
+      user-select: none;
+    }
+    .check input {
+      width: auto;
+      transform: scale(1.2);
+    }
+    .check span {
+      color: #b0b0b8;
+      font-size: 16px;
+    }
+
     .row-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -145,11 +140,7 @@
       font-weight: 700;
     }
 
-    button:disabled {
-      background: #3a3a3c;
-      color: #aaa;
-      cursor: default;
-    }
+    button:disabled { background: #3a3a3c; color: #aaa; cursor: default; }
 
     .error {
       color: #ff453a;
@@ -184,31 +175,11 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     }
 
-    .dock-left {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
+    .dock-left { display: flex; flex-direction: column; gap: 2px; }
+    .dock-title { font-size: 16px; font-weight: 800; margin: 0; color: rgba(245, 245, 245, 0.95); }
+    .dock-sub { font-size: 13px; margin: 0; color: rgba(176, 176, 184, 0.9); }
 
-    .dock-title {
-      font-size: 16px;
-      font-weight: 800;
-      margin: 0;
-      color: rgba(245, 245, 245, 0.95);
-    }
-
-    .dock-sub {
-      font-size: 13px;
-      margin: 0;
-      color: rgba(176, 176, 184, 0.9);
-    }
-
-    .dock-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
+    .dock-actions { display: flex; gap: 10px; align-items: center; }
     .dock-btn {
       padding: 10px 12px;
       border-radius: 14px;
@@ -220,96 +191,25 @@
       cursor: pointer;
       user-select: none;
     }
-
     .dock-btn.primary {
       background: rgba(255, 159, 10, 0.95);
       border: none;
       color: #000;
     }
-
-    .dock-btn:active {
-      transform: scale(0.98);
-    }
+    .dock-btn:active { transform: scale(0.98); }
   </style>
 </head>
 
 <body>
   <div class="app">
     <h1>Expenses</h1>
-    <p class="subtitle">Loaded from GetBills. Add new items via SetBills.</p>
+    <p class="subtitle">Tap an item to edit. Use the bottom button to add a new one.</p>
 
     <div class="section-title">List</div>
     <div id="list"></div>
 
-    <div id="createArea" style="display:none;">
-      <div class="form-card">
-        <div class="form-grid">
-          <div>
-            <label for="name">Name</label>
-            <input id="name" placeholder="e.g., Admin - Firenze" />
-          </div>
-
-          <div>
-            <label for="type">Type</label>
-            <select id="type">
-              <option value="expense" selected>expense</option>
-              <option value="utility">utility</option>
-              <option value="subscription">subscription</option>
-              <option value="insurance">insurance</option>
-              <option value="loan">loan</option>
-              <option value="other">other</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="startDate">Start date</label>
-            <input id="startDate" type="date" />
-          </div>
-
-          <div>
-            <label for="unit">Frequency unit</label>
-            <select id="unit">
-              <option value="month" selected>month</option>
-              <option value="year">year</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="interval">Frequency interval</label>
-            <input id="interval" type="number" min="1" value="1" />
-          </div>
-
-          <div>
-            <label for="reference">Reference (optional)</label>
-            <input id="reference" placeholder="" />
-          </div>
-
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <label style="display:flex; gap:10px; align-items:center; margin:0;">
-              <input id="autoPay" type="checkbox" style="width:auto; transform: scale(1.2);" />
-              <span style="color:#b0b0b8; font-size:16px;">Auto pay</span>
-            </label>
-
-            <label style="display:flex; gap:10px; align-items:center; margin:0;">
-              <input id="isVariableAmount" type="checkbox" style="width:auto; transform: scale(1.2);" />
-              <span style="color:#b0b0b8; font-size:16px;">Variable amount</span>
-            </label>
-
-            <label style="display:flex; gap:10px; align-items:center; margin:0;">
-              <input id="isActive" type="checkbox" checked style="width:auto; transform: scale(1.2);" />
-              <span style="color:#b0b0b8; font-size:16px;">Active</span>
-            </label>
-          </div>
-
-          <div class="row-actions">
-            <button id="saveBtn" onclick="createBill()">Add</button>
-            <button class="secondary" onclick="toggleCreate(false)">Cancel</button>
-          </div>
-
-          <div id="err" class="error"></div>
-        </div>
-      </div>
-    </div>
+    <!-- Add form (inline, below list) -->
+    <div id="createArea" style="display:none;"></div>
   </div>
 
   <!-- Frosted bottom bar -->
@@ -328,12 +228,14 @@
   </div>
 
   <script>
-    // --- API calls ---
+    // ---------------------------
+    // API calls
+    // ---------------------------
     async function getBills() {
       const res = await fetch("/api/GetBills");
       if (!res.ok) throw new Error("Failed to load bills");
       const data = await res.json();
-      // Support either array response or { bills: [...] }
+      // Supports either: [ ... ] OR { bills: [ ... ] }
       return Array.isArray(data) ? data : (data.bills || []);
     }
 
@@ -346,29 +248,236 @@
       if (!res.ok) throw new Error("Failed to save bill");
     }
 
-    // --- UI state ---
+    // ---------------------------
+    // State
+    // ---------------------------
     let cachedBills = [];
     let createOpen = false;
+    let editingId = null; // which existing item is being edited inline
 
+    // ---------------------------
+    // Helpers
+    // ---------------------------
     function goBack() {
       window.location.href = "/";
     }
 
-    function toggleCreate(force) {
-      createOpen = (typeof force === "boolean") ? force : !createOpen;
-      document.getElementById("createArea").style.display = createOpen ? "block" : "none";
-      document.getElementById("err").style.display = "none";
-      if (createOpen) {
-        // default start date = today
-        const today = new Date();
-        const y = today.getFullYear();
-        const m = String(today.getMonth() + 1).padStart(2, "0");
-        const d = String(today.getDate()).padStart(2, "0");
-        document.getElementById("startDate").value = `${y}-${m}-${d}`;
-        setTimeout(() => document.getElementById("name").focus(), 0);
-      }
+    function setCountText(text) {
+      document.getElementById("count").textContent = text;
     }
 
+    function todayYMD() {
+      const t = new Date();
+      const y = t.getFullYear();
+      const m = String(t.getMonth() + 1).padStart(2, "0");
+      const d = String(t.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function nextIdFrom(items) {
+      const nums = items
+        .map(x => Number(String(x?.id ?? "").trim()))
+        .filter(n => Number.isFinite(n));
+      if (!nums.length) return String(Date.now());
+      return String(Math.max(...nums) + 1);
+    }
+
+    // Builds a form element (used for both Add and Update)
+    function buildBillForm({ mode, bill, onSave, onCancel }) {
+      const b = bill || {};
+      const unit = b.frequency?.unit || "month";
+      const interval = b.frequency?.interval || 1;
+
+      const wrap = document.createElement("div");
+      wrap.className = "form-card";
+      wrap.onclick = (e) => e.stopPropagation(); // don’t toggle row when clicking inside form
+
+      wrap.innerHTML = `
+        <div class="form-grid">
+          <div>
+            <label>Name</label>
+            <input name="name" placeholder="e.g., Admin - Firenze" />
+          </div>
+
+          <div>
+            <label>Type</label>
+            <select name="type">
+              <option value="expense">expense</option>
+              <option value="utility">utility</option>
+              <option value="subscription">subscription</option>
+              <option value="insurance">insurance</option>
+              <option value="loan">loan</option>
+              <option value="other">other</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Start date</label>
+            <input name="startDate" type="date" />
+          </div>
+
+          <div>
+            <label>Frequency unit</label>
+            <select name="unit">
+              <option value="month">month</option>
+              <option value="year">year</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Frequency interval</label>
+            <input name="interval" type="number" min="1" />
+          </div>
+
+          <div>
+            <label>Reference (optional)</label>
+            <input name="reference" placeholder="" />
+          </div>
+
+          <div class="checks">
+            <label class="check">
+              <input name="autoPay" type="checkbox" />
+              <span>Auto pay</span>
+            </label>
+
+            <label class="check">
+              <input name="isVariableAmount" type="checkbox" />
+              <span>Variable amount</span>
+            </label>
+
+            <label class="check">
+              <input name="isActive" type="checkbox" />
+              <span>Active</span>
+            </label>
+          </div>
+
+          <div class="row-actions">
+            <button class="primaryBtn" type="button">${mode === "edit" ? "Update" : "Add"}</button>
+            <button class="secondary" type="button">Cancel</button>
+          </div>
+
+          <div class="error"></div>
+        </div>
+      `;
+
+      // Fill values
+      const $ = (sel) => wrap.querySelector(sel);
+      const nameEl = $('input[name="name"]');
+      const typeEl = $('select[name="type"]');
+      const startEl = $('input[name="startDate"]');
+      const unitEl = $('select[name="unit"]');
+      const intEl = $('input[name="interval"]');
+      const refEl = $('input[name="reference"]');
+      const autoEl = $('input[name="autoPay"]');
+      const varEl = $('input[name="isVariableAmount"]');
+      const activeEl = $('input[name="isActive"]');
+      const primaryBtn = wrap.querySelector(".primaryBtn");
+      const cancelBtn = wrap.querySelector("button.secondary");
+      const errEl = wrap.querySelector(".error");
+
+      nameEl.value = b.name || "";
+      typeEl.value = b.type || "expense";
+      startEl.value = b.startDate || todayYMD();
+      unitEl.value = unit || "month";
+      intEl.value = Number(interval) || 1;
+      refEl.value = b.reference || "";
+      autoEl.checked = !!b.autoPay;
+      varEl.checked = !!b.isVariableAmount;
+      activeEl.checked = (b.isActive !== undefined) ? !!b.isActive : true;
+
+      function showErr(msg) {
+        errEl.textContent = msg;
+        errEl.style.display = "block";
+      }
+      function clearErr() {
+        errEl.textContent = "";
+        errEl.style.display = "none";
+      }
+
+      cancelBtn.onclick = () => onCancel?.();
+
+      primaryBtn.onclick = async () => {
+        clearErr();
+        primaryBtn.disabled = true;
+        cancelBtn.disabled = true;
+
+        try {
+          const payload = {
+            id: String(b.id || ""), // may be replaced for add
+            name: nameEl.value.trim(),
+            type: typeEl.value,
+            startDate: startEl.value,
+            frequency: {
+              unit: unitEl.value,
+              interval: Number(intEl.value) || 1
+            },
+            reference: refEl.value || "",
+            autoPay: !!autoEl.checked,
+            isVariableAmount: !!varEl.checked,
+            isActive: !!activeEl.checked
+          };
+
+          if (!payload.name) throw new Error("Name is required.");
+          if (!payload.startDate) throw new Error("Start date is required.");
+          if (!payload.frequency.unit) throw new Error("Frequency unit is required.");
+
+          await onSave(payload);
+        } catch (e) {
+          showErr(e?.message || "Failed to save.");
+        } finally {
+          primaryBtn.disabled = false;
+          cancelBtn.disabled = false;
+        }
+      };
+
+      // focus first field
+      setTimeout(() => nameEl.focus(), 0);
+
+      return wrap;
+    }
+
+    // ---------------------------
+    // Add form control
+    // ---------------------------
+    function toggleCreate(force) {
+      createOpen = (typeof force === "boolean") ? force : !createOpen;
+
+      // close any inline editor when opening add form (keeps UI calm)
+      if (createOpen) editingId = null;
+
+      const host = document.getElementById("createArea");
+      host.innerHTML = "";
+      host.style.display = createOpen ? "block" : "none";
+
+      if (!createOpen) return;
+
+      const form = buildBillForm({
+        mode: "add",
+        bill: {
+          type: "expense",
+          startDate: todayYMD(),
+          frequency: { unit: "month", interval: 1 },
+          autoPay: false,
+          isVariableAmount: false,
+          isActive: true,
+          reference: ""
+        },
+        onSave: async (payload) => {
+          // assign new id on add
+          payload.id = nextIdFrom(cachedBills);
+          await setBills(payload);
+          toggleCreate(false);
+          await load();
+        },
+        onCancel: () => toggleCreate(false)
+      });
+
+      host.appendChild(form);
+    }
+
+    // ---------------------------
+    // Render list + inline edit
+    // ---------------------------
     function renderList(items) {
       const list = document.getElementById("list");
       list.innerHTML = "";
@@ -380,7 +489,14 @@
 
       for (const b of items) {
         const row = document.createElement("div");
-        row.className = "row";
+        row.className = "row" + (editingId === b.id ? " editing" : "");
+        row.onclick = () => {
+          // close add form when editing an existing item
+          if (createOpen) toggleCreate(false);
+
+          editingId = (editingId === b.id) ? null : b.id;
+          renderList(items);
+        };
 
         const top = document.createElement("div");
         top.className = "row-top";
@@ -397,79 +513,52 @@
 
         const meta = document.createElement("div");
         meta.className = "meta";
+
         const unit = b.frequency?.unit || "month";
         const interval = b.frequency?.interval || 1;
 
         meta.innerHTML = `
-          <span class="pill">Start: ${b.startDate || ""}</span>
-          <span class="pill">Freq: ${interval} ${unit}${Number(interval) > 1 ? "s" : ""}</span>
-          <span class="pill">Active: ${b.isActive ? "Yes" : "No"}</span>
-          <span class="pill">AutoPay: ${b.autoPay ? "Yes" : "No"}</span>
+          <span>Start: ${b.startDate || ""}</span>
+          <span>Freq: ${interval} ${unit}${Number(interval) > 1 ? "s" : ""}</span>
+          <span>Active: ${b.isActive ? "Yes" : "No"}</span>
+          <span>AutoPay: ${b.autoPay ? "Yes" : "No"}</span>
         `;
 
         row.append(top, meta);
         list.appendChild(row);
+
+        // Inline edit form under the selected row
+        if (editingId === b.id) {
+          const editor = buildBillForm({
+            mode: "edit",
+            bill: b,
+            onSave: async (payload) => {
+              // keep same id for update
+              payload.id = String(b.id);
+              await setBills(payload);
+              editingId = null;
+              await load();
+            },
+            onCancel: () => {
+              editingId = null;
+              renderList(items);
+            }
+          });
+
+          list.appendChild(editor);
+        }
       }
     }
 
-    function setCountText(text) {
-      document.getElementById("count").textContent = text;
-    }
-
-    function nextIdFrom(items) {
-      // Safe-ish: if ids are numeric strings, pick max+1, else timestamp
-      const nums = items
-        .map(x => Number(String(x.id || "").trim()))
-        .filter(n => Number.isFinite(n));
-      if (!nums.length) return String(Date.now());
-      return String(Math.max(...nums) + 1);
-    }
-
-    async function createBill() {
-      const err = document.getElementById("err");
-      err.style.display = "none";
-
-      const saveBtn = document.getElementById("saveBtn");
-      saveBtn.disabled = true;
-
-      try {
-        const payload = {
-          id: nextIdFrom(cachedBills),
-          name: document.getElementById("name").value.trim(),
-          type: document.getElementById("type").value,
-          startDate: document.getElementById("startDate").value,
-          frequency: {
-            unit: document.getElementById("unit").value,
-            interval: Number(document.getElementById("interval").value) || 1
-          },
-          reference: document.getElementById("reference").value || "",
-          autoPay: !!document.getElementById("autoPay").checked,
-          isVariableAmount: !!document.getElementById("isVariableAmount").checked,
-          isActive: !!document.getElementById("isActive").checked
-        };
-
-        if (!payload.name) throw new Error("Name is required.");
-        if (!payload.startDate) throw new Error("Start date is required.");
-        if (!payload.frequency.unit) throw new Error("Frequency unit is required.");
-
-        await setBills(payload);
-
-        // refresh list
-        toggleCreate(false);
-        await load();
-      } catch (e) {
-        err.textContent = e?.message || "Failed to add expense.";
-        err.style.display = "block";
-      } finally {
-        saveBtn.disabled = false;
-      }
-    }
-
+    // ---------------------------
+    // Load
+    // ---------------------------
     async function load() {
       setCountText("Loading…");
       cachedBills = await getBills();
 
-      const expensesOnly = cachedBills;
+      // Show only items typed as "expense"
+      const expensesOnly = cachedBills.filter(x => (x?.type || "") === "expense");
 
       renderList(expensesOnly);
       setCountText(`${expensesOnly.length} item${expensesOnly.length === 1 ? "" : "s"}`);
