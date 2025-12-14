@@ -17,19 +17,20 @@
       color: #f5f5f5;
     }
 
+    /* Main app container */
     .app {
-      padding: 22px 10px 80px;
+      padding: 22px 10px 120px; /* extra bottom space for frosted bar */
     }
 
     h1 {
       font-size: 32px;
       font-weight: 800;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .subtitle {
       color: #b0b0b8;
-      margin-bottom: 22px;
+      margin-bottom: 18px;
     }
 
     h2 {
@@ -42,6 +43,7 @@
       margin-bottom: 18px;
     }
 
+    /* Bill cards */
     .bill {
       background: #1c1c1e;
       padding: 18px 22px;
@@ -104,7 +106,7 @@
       flex-wrap: wrap;
     }
 
-    /* Collapsible paid section */
+    /* Paid collapsible */
     .collapsible-header {
       display: flex;
       align-items: center;
@@ -124,7 +126,7 @@
       display: none;
     }
 
-    /* Inline pay UI (appears under clicked bill) */
+    /* Inline pay UI */
     .pay-inline {
       margin-top: 10px;
       display: flex;
@@ -159,13 +161,54 @@
       background: #3a3a3c;
       color: #aaa;
     }
+
+    /* Frosted glass bottom bar */
+    .bottom-glass {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      padding: 14px 12px calc(14px + env(safe-area-inset-bottom));
+
+      /* Frosted glass effect */
+      background: rgba(28, 28, 30, 0.45);
+      -webkit-backdrop-filter: blur(18px) saturate(140%);
+      backdrop-filter: blur(18px) saturate(140%);
+
+      /* Separation */
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .bottom-glass .pill {
+      background: rgba(44, 44, 46, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 18px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .bottom-glass .hint {
+      color: rgba(245, 245, 245, 0.85);
+      font-size: 16px;
+      margin: 0;
+    }
+
+    .bottom-glass .right {
+      color: rgba(176, 176, 184, 0.9);
+      font-size: 14px;
+      white-space: nowrap;
+    }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <h1>Monthly Payments</h1>
-    <div class="subtitle">Tap a bill to log a payment.</div>
+    <h1>This Month</h1>
 
     <div class="section">
       <h2>Pay immediately</h2>
@@ -178,21 +221,22 @@
     </div>
 
     <div class="section">
-      <div
-        class="collapsible-header"
-        id="paidHeader"
-        role="button"
-        tabindex="0"
-        aria-expanded="false"
-      >
+      <div class="collapsible-header" id="paidHeader" role="button" tabindex="0" aria-expanded="false">
         <span class="chevron" id="paidChevron">▸</span>
         <div style="display:flex; align-items:baseline; gap:10px;">
           <h2 style="margin:0;">Already paid</h2>
           <span class="subtitle" id="paidCount" style="margin:0; font-size:16px;"></span>
         </div>
       </div>
-
       <div id="paid" class="paid-container is-collapsed"></div>
+    </div>
+  </div>
+
+  <!-- Frosted bottom bar -->
+  <div class="bottom-glass">
+    <div class="pill">
+      <p class="hint">Tap a bill to log a payment</p>
+      <span class="right">Monthly</span>
     </div>
   </div>
 
@@ -235,11 +279,11 @@
         title.textContent = bill.name;
         name.appendChild(title);
 
-        if (bill.autoPay === true) {
+        if (bill.autoPay) {
           const auto = document.createElement("span");
           auto.className = "auto-pay";
-          auto.title = "Automatic payment enabled";
           auto.textContent = "⚙️";
+          auto.title = "Automatic payment enabled";
           name.appendChild(auto);
         }
 
@@ -266,8 +310,7 @@
         }
 
         // Inline pay UI (only for expanded bill)
-        const isExpanded = expandedBillId === bill.id;
-        if (isExpanded) {
+        if (expandedBillId === bill.id) {
           const inline = document.createElement("div");
           inline.className = "pay-inline";
 
@@ -290,7 +333,7 @@
             const amount = Number(input.value);
             if (!Number.isFinite(amount) || amount <= 0) {
               btn.disabled = false;
-              alert("Enter a valid amount greater than 0.");
+              alert("Enter a valid amount.");
               return;
             }
 
@@ -312,7 +355,7 @@
 
         // Toggle expand/collapse on card click
         div.onclick = () => {
-          expandedBillId = (expandedBillId === bill.id) ? null : bill.id;
+          expandedBillId = expandedBillId === bill.id ? null : bill.id;
           load();
         };
 
@@ -361,7 +404,9 @@
       renderList("upcoming", data.upcoming || []);
       renderList("paid", data.paid || [], true);
 
-      document.getElementById("paidCount").textContent = `(${(data.paid || []).length})`;
+      document.getElementById("paidCount").textContent =
+        `(${(data.paid || []).length})`;
+
       setupPaidToggle();
     }
 
