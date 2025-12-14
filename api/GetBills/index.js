@@ -12,16 +12,12 @@ module.exports = async function (context, req, bills) {
     return;
   }
 
-  // Make ownerId available for the binding expression in function.json
-  context.bindingData = context.bindingData || {};
-  context.bindingData.ownerId = ownerId;
-
-  // `context.bindings.bills` comes from Cosmos input binding
-  const myBills = context.bindings.bills || [];
+  const all = Array.isArray(bills) ? bills : [];
+  const mine = all.filter(b => String(b.ownerId) === String(ownerId));
 
   context.res = {
     status: 200,
     headers: { "Content-Type": "application/json" },
-    body: myBills
+    body: mine
   };
 };

@@ -131,7 +131,7 @@ module.exports = async function (context, req, bills, payments) {
 
     for (const b of (bills || [])) {
       if (!b || b.isActive !== true) continue;
-
+      if (String(b.ownerId) !== String(ownerId)) continue;
       const startUtc = parseYMD(b.startDate);
       if (!startUtc) continue;
 

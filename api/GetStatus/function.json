@@ -23,7 +23,7 @@
       "databaseName": "expense-app-db",
       "containerName": "payments",
       "connection": "CosmosDB",
-      "sqlQuery": "SELECT * FROM c WHERE c.ownerId = {ownerId}"
+      "sqlQuery": "SELECT * FROM c"
     },
     {
       "type": "http",
