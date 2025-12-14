@@ -28,7 +28,8 @@ module.exports = async function (context, req) {
       id: `${billId}-${Date.now()}`,
       billId,
       amount: numericAmount,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      ownerId
     };
 
     // Write to Cosmos
@@ -37,7 +38,7 @@ module.exports = async function (context, req) {
     context.res = {
       status: 201,
       headers: { "Content-Type": "application/json" },
-      body:  {...payment, ownerId },
+      body:  payment,
     };
   } catch (err) {
     context.log.error("LogPayment failed:", err);
