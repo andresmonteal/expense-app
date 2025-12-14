@@ -76,7 +76,7 @@ module.exports = async function (context, req) {
     };
 
     // IMPORTANT: this must match the Cosmos output binding name in function.json ("bills")
-    context.bindings.bills = bill;
+    context.bindings.bills = billWithOwner;
 
     context.res = {
       status: 201,
