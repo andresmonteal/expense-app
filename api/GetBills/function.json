@@ -22,7 +22,7 @@
       "databaseName": "expense-app-db",
       "containerName": "bills",
       "connection": "CosmosDB",
-      "sqlQuery": "SELECT * FROM c"
+      "sqlQuery": "SELECT * FROM c ORDER BY c.name"
     }
   ]
 }
