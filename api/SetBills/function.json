@@ -1,0 +1,27 @@
+{
+  "bindings": [
+    {
+      "authLevel": "function",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "post"
+      ]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "name": "bills",
+      "direction": "out",
+      "type": "cosmosDB",
+      "methods": [],
+      "databaseName": "expense-app-db",
+      "containerName": "bills",
+      "connection": "CosmosDB"
+    }
+  ]
+}

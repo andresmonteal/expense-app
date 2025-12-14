@@ -18,60 +18,121 @@
     }
 
     .app {
-      padding: 22px 10px 100px;
+      padding: 22px 10px 130px; /* space for frosted bar */
     }
 
     h1 {
       font-size: 32px;
       font-weight: 800;
-      margin-bottom: 8px;
+      margin: 0 0 6px;
     }
 
     .subtitle {
       color: #b0b0b8;
-      margin-bottom: 18px;
+      margin: 0 0 18px;
+      font-size: 16px;
     }
 
-    .expense {
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 18px 4px 10px;
+    }
+
+    /* List rows */
+    .row {
       background: #1c1c1e;
       padding: 16px 20px;
       border-bottom: 1px solid #2c2c2e;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .expense-name {
-      font-size: 22px;
-      font-weight: 600;
-    }
-
-    .expense-amount {
-      font-size: 20px;
-      font-weight: 700;
-    }
-
-    .add-expense {
-      margin-top: 20px;
-      display: flex;
       flex-direction: column;
+      gap: 6px;
+    }
+
+    .row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .name {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .type {
+      color: #b0b0b8;
+      font-size: 14px;
+      padding: 3px 8px;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 999px;
+      background: rgba(44,44,46,0.35);
+      white-space: nowrap;
+    }
+
+    .meta {
+      color: #b0b0b8;
+      font-size: 15px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      line-height: 1.2;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Inline create form */
+    .form-card {
+      background: rgba(28, 28, 30, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 18px;
+      padding: 14px;
+      margin: 12px 0 0;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
       gap: 10px;
     }
 
-    input {
+    label {
+      font-size: 14px;
+      color: #b0b0b8;
+      display: block;
+      margin: 0 0 6px;
+    }
+
+    input, select {
+      width: 100%;
+      box-sizing: border-box;
       padding: 14px;
       border-radius: 14px;
       border: none;
       background: #2c2c2e;
       color: #fff;
-      font-size: 20px;
+      font-size: 18px;
+      outline: none;
+    }
+
+    .row-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
     }
 
     button {
       padding: 14px;
       border-radius: 14px;
       border: none;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
       background: #ff9f0a;
       cursor: pointer;
@@ -81,6 +142,93 @@
       background: transparent;
       border: 1px solid #2c2c2e;
       color: #f5f5f5;
+      font-weight: 700;
+    }
+
+    button:disabled {
+      background: #3a3a3c;
+      color: #aaa;
+      cursor: default;
+    }
+
+    .error {
+      color: #ff453a;
+      font-size: 14px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    /* Frosted glass bottom bar */
+    .bottom-glass {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      padding: 14px 12px calc(14px + env(safe-area-inset-bottom));
+      background: rgba(28, 28, 30, 0.45);
+      -webkit-backdrop-filter: blur(18px) saturate(140%);
+      backdrop-filter: blur(18px) saturate(140%);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .bottom-glass .dock {
+      background: rgba(44, 44, 46, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 18px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .dock-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .dock-title {
+      font-size: 16px;
+      font-weight: 800;
+      margin: 0;
+      color: rgba(245, 245, 245, 0.95);
+    }
+
+    .dock-sub {
+      font-size: 13px;
+      margin: 0;
+      color: rgba(176, 176, 184, 0.9);
+    }
+
+    .dock-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .dock-btn {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(44, 44, 46, 0.35);
+      color: #f5f5f5;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .dock-btn.primary {
+      background: rgba(255, 159, 10, 0.95);
+      border: none;
+      color: #000;
+    }
+
+    .dock-btn:active {
+      transform: scale(0.98);
     }
   </style>
 </head>
@@ -88,54 +236,249 @@
 <body>
   <div class="app">
     <h1>Expenses</h1>
-    <div class="subtitle">Track one-time or irregular expenses</div>
+    <p class="subtitle">Loaded from GetBills. Add new items via SetBills.</p>
 
-    <div id="expenseList">
-      <div class="expense">
-        <span class="expense-name">Groceries</span>
-        <span class="expense-amount">$45.00</span>
-      </div>
-      <div class="expense">
-        <span class="expense-name">Taxi</span>
-        <span class="expense-amount">$12.50</span>
+    <div class="section-title">List</div>
+    <div id="list"></div>
+
+    <div id="createArea" style="display:none;">
+      <div class="form-card">
+        <div class="form-grid">
+          <div>
+            <label for="name">Name</label>
+            <input id="name" placeholder="e.g., Admin - Firenze" />
+          </div>
+
+          <div>
+            <label for="type">Type</label>
+            <select id="type">
+              <option value="expense" selected>expense</option>
+              <option value="utility">utility</option>
+              <option value="subscription">subscription</option>
+              <option value="insurance">insurance</option>
+              <option value="loan">loan</option>
+              <option value="other">other</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="startDate">Start date</label>
+            <input id="startDate" type="date" />
+          </div>
+
+          <div>
+            <label for="unit">Frequency unit</label>
+            <select id="unit">
+              <option value="month" selected>month</option>
+              <option value="year">year</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="interval">Frequency interval</label>
+            <input id="interval" type="number" min="1" value="1" />
+          </div>
+
+          <div>
+            <label for="reference">Reference (optional)</label>
+            <input id="reference" placeholder="" />
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <label style="display:flex; gap:10px; align-items:center; margin:0;">
+              <input id="autoPay" type="checkbox" style="width:auto; transform: scale(1.2);" />
+              <span style="color:#b0b0b8; font-size:16px;">Auto pay</span>
+            </label>
+
+            <label style="display:flex; gap:10px; align-items:center; margin:0;">
+              <input id="isVariableAmount" type="checkbox" style="width:auto; transform: scale(1.2);" />
+              <span style="color:#b0b0b8; font-size:16px;">Variable amount</span>
+            </label>
+
+            <label style="display:flex; gap:10px; align-items:center; margin:0;">
+              <input id="isActive" type="checkbox" checked style="width:auto; transform: scale(1.2);" />
+              <span style="color:#b0b0b8; font-size:16px;">Active</span>
+            </label>
+          </div>
+
+          <div class="row-actions">
+            <button id="saveBtn" onclick="createBill()">Add</button>
+            <button class="secondary" onclick="toggleCreate(false)">Cancel</button>
+          </div>
+
+          <div id="err" class="error"></div>
+        </div>
       </div>
     </div>
+  </div>
 
-    <div class="add-expense">
-      <input id="expenseName" placeholder="Expense name" />
-      <input id="expenseAmount" type="number" placeholder="Amount" />
-      <button onclick="addExpense()">Add expense</button>
-      <button class="secondary" onclick="goBack()">Back</button>
+  <!-- Frosted bottom bar -->
+  <div class="bottom-glass">
+    <div class="dock">
+      <div class="dock-left">
+        <p class="dock-title">Expenses</p>
+        <p class="dock-sub" id="count">Loading…</p>
+      </div>
+
+      <div class="dock-actions">
+        <div class="dock-btn" onclick="goBack()">Bills</div>
+        <div class="dock-btn primary" onclick="toggleCreate()">+ Add expense</div>
+      </div>
     </div>
   </div>
 
   <script>
+    // --- API calls ---
+    async function getBills() {
+      const res = await fetch("/api/GetBills");
+      if (!res.ok) throw new Error("Failed to load bills");
+      const data = await res.json();
+      // Support either array response or { bills: [...] }
+      return Array.isArray(data) ? data : (data.bills || []);
+    }
+
+    async function setBills(payload) {
+      const res = await fetch("/api/SetBills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("Failed to save bill");
+    }
+
+    // --- UI state ---
+    let cachedBills = [];
+    let createOpen = false;
+
     function goBack() {
       window.location.href = "/";
     }
 
-    function addExpense() {
-      const name = document.getElementById("expenseName").value.trim();
-      const amount = Number(document.getElementById("expenseAmount").value);
+    function toggleCreate(force) {
+      createOpen = (typeof force === "boolean") ? force : !createOpen;
+      document.getElementById("createArea").style.display = createOpen ? "block" : "none";
+      document.getElementById("err").style.display = "none";
+      if (createOpen) {
+        // default start date = today
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, "0");
+        const d = String(today.getDate()).padStart(2, "0");
+        document.getElementById("startDate").value = `${y}-${m}-${d}`;
+        setTimeout(() => document.getElementById("name").focus(), 0);
+      }
+    }
 
-      if (!name || !Number.isFinite(amount) || amount <= 0) {
-        alert("Enter a valid expense.");
+    function renderList(items) {
+      const list = document.getElementById("list");
+      list.innerHTML = "";
+
+      if (!items.length) {
+        list.textContent = "Nothing here.";
         return;
       }
 
-      // Placeholder — later you’ll POST to an API
-      const row = document.createElement("div");
-      row.className = "expense";
-      row.innerHTML = `
-        <span class="expense-name">${name}</span>
-        <span class="expense-amount">$${amount.toFixed(2)}</span>
-      `;
+      for (const b of items) {
+        const row = document.createElement("div");
+        row.className = "row";
 
-      document.getElementById("expenseList").appendChild(row);
+        const top = document.createElement("div");
+        top.className = "row-top";
 
-      document.getElementById("expenseName").value = "";
-      document.getElementById("expenseAmount").value = "";
+        const name = document.createElement("div");
+        name.className = "name";
+        name.textContent = b.name || "(no name)";
+
+        const type = document.createElement("span");
+        type.className = "type";
+        type.textContent = String(b.type || "expense");
+
+        top.append(name, type);
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        const unit = b.frequency?.unit || "month";
+        const interval = b.frequency?.interval || 1;
+
+        meta.innerHTML = `
+          <span class="pill">Start: ${b.startDate || ""}</span>
+          <span class="pill">Freq: ${interval} ${unit}${Number(interval) > 1 ? "s" : ""}</span>
+          <span class="pill">Active: ${b.isActive ? "Yes" : "No"}</span>
+          <span class="pill">AutoPay: ${b.autoPay ? "Yes" : "No"}</span>
+        `;
+
+        row.append(top, meta);
+        list.appendChild(row);
+      }
     }
+
+    function setCountText(text) {
+      document.getElementById("count").textContent = text;
+    }
+
+    function nextIdFrom(items) {
+      // Safe-ish: if ids are numeric strings, pick max+1, else timestamp
+      const nums = items
+        .map(x => Number(String(x.id || "").trim()))
+        .filter(n => Number.isFinite(n));
+      if (!nums.length) return String(Date.now());
+      return String(Math.max(...nums) + 1);
+    }
+
+    async function createBill() {
+      const err = document.getElementById("err");
+      err.style.display = "none";
+
+      const saveBtn = document.getElementById("saveBtn");
+      saveBtn.disabled = true;
+
+      try {
+        const payload = {
+          id: nextIdFrom(cachedBills),
+          name: document.getElementById("name").value.trim(),
+          type: document.getElementById("type").value,
+          startDate: document.getElementById("startDate").value,
+          frequency: {
+            unit: document.getElementById("unit").value,
+            interval: Number(document.getElementById("interval").value) || 1
+          },
+          reference: document.getElementById("reference").value || "",
+          autoPay: !!document.getElementById("autoPay").checked,
+          isVariableAmount: !!document.getElementById("isVariableAmount").checked,
+          isActive: !!document.getElementById("isActive").checked
+        };
+
+        if (!payload.name) throw new Error("Name is required.");
+        if (!payload.startDate) throw new Error("Start date is required.");
+        if (!payload.frequency.unit) throw new Error("Frequency unit is required.");
+
+        await setBills(payload);
+
+        // refresh list
+        toggleCreate(false);
+        await load();
+      } catch (e) {
+        err.textContent = e?.message || "Failed to add expense.";
+        err.style.display = "block";
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    async function load() {
+      setCountText("Loading…");
+      cachedBills = await getBills();
+
+      const expensesOnly = cachedBills;
+
+      renderList(expensesOnly);
+      setCountText(`${expensesOnly.length} item${expensesOnly.length === 1 ? "" : "s"}`);
+    }
+
+    load().catch(() => {
+      document.getElementById("list").textContent = "Failed to load expenses.";
+      setCountText("Error");
+    });
   </script>
 </body>
 </html>
