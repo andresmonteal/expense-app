@@ -211,6 +211,18 @@
     .bottom-glass .pill.clickable:active {
       transform: scale(0.98);
     }
+
+    .auth-link {
+      color: rgba(245, 245, 245, 0.95);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .auth-link.muted {
+      color: rgba(176, 176, 184, 0.9);
+    }
+    
   </style>
 </head>
 
@@ -244,6 +256,10 @@
   <div class="bottom-glass">
     <div class="pill clickable" onclick="goToExpenses()">
       <p class="hint">Tap a bill to log a payment</p>
+        <div style="display:flex; gap:12px; align-items:center;">
+          <a href="/.auth/login/github" class="auth-link">Sign in</a>
+          <a href="/.auth/logout" class="auth-link muted">Sign out</a>
+        </div>
       <span class="right">Expenses →</span>
     </div>
   </div>
@@ -421,7 +437,7 @@
     function goToExpenses() {
       window.location.href = "/expenses.html";
     }
-    
+
     load();
   </script>
 </body>

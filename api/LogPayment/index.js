@@ -1,6 +1,17 @@
+const { getOwnerId } = require("../_auth");
+
 module.exports = async function (context, req) {
   try {
     const { billId, amount } = req.body || {};
+    const ownerId = getOwnerId(req);
+
+    if (!ownerId) {
+        context.res = {
+        status: 401,
+        body: { error: "Not authenticated" }
+        };
+        return;
+    }
 
     if (!billId || typeof billId !== "string") {
       context.res = { status: 400, body: { error: "billId is required" } };
@@ -26,7 +37,7 @@ module.exports = async function (context, req) {
     context.res = {
       status: 201,
       headers: { "Content-Type": "application/json" },
-      body: payment
+      body:  {...payment, ownerId },
     };
   } catch (err) {
     context.log.error("LogPayment failed:", err);

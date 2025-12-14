@@ -1,5 +1,7 @@
 const { randomUUID } = require("crypto");
 
+const { getOwnerId } = require("../_auth");
+
 const ALLOWED_KEYS = new Set([
   "id",
   "name",
@@ -58,6 +60,15 @@ function sanitizeBillInput(input) {
 module.exports = async function (context, req) {
   try {
     const bill = sanitizeBillInput(req.body || {});
+    const ownerId = getOwnerId(req);
+
+    if (!ownerId) {
+        context.res = {
+        status: 401,
+        body: { error: "Not authenticated" }
+        };
+        return;
+    }
 
     // IMPORTANT: this must match the Cosmos output binding name in function.json ("bills")
     context.bindings.bills = bill;
@@ -65,7 +76,7 @@ module.exports = async function (context, req) {
     context.res = {
       status: 201,
       headers: { "Content-Type": "application/json" },
-      body: bill,
+      body: {...bill, ownerId },
     };
   } catch (err) {
     context.res = {

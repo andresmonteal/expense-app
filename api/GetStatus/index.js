@@ -1,5 +1,6 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 const BOGOTA_OFFSET_HOURS = 5; // Bogota is UTC-5 (no DST)
+const { getOwnerId } = require("../_auth");
 
 function todayBogotaUtcDateOnly() {
   const shifted = new Date(Date.now() - BOGOTA_OFFSET_HOURS * 60 * 60 * 1000);
@@ -118,9 +119,20 @@ module.exports = async function (context, req, bills, payments) {
     const payImmediately = [];
     const upcoming = [];
     const paid = [];
+    const ownerId = getOwnerId(req);
+
+    if (!ownerId) {
+      context.res = {
+        status: 401,
+        body: { error: "Not authenticated" }
+      };
+      return;
+    }
 
     for (const b of (bills || [])) {
       if (!b || b.isActive !== true) continue;
+
+      if (String(b.ownerId) !== String(ownerId)) continue;
 
       const startUtc = parseYMD(b.startDate);
       if (!startUtc) continue;
