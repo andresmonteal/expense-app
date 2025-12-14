@@ -6,25 +6,56 @@
   <title>Monthly Payments</title>
 
   <style>
-    html { font-family: system-ui, -apple-system, sans-serif; font-size: 22px; }
-    body { margin: 0; background: #000; color: #f5f5f5; }
-    .app { padding: 26px 10px 80px; }
-    h1 { font-size: 34px; font-weight: 800; margin-bottom: 10px; }
-    .subtitle { color: #b0b0b8; margin-bottom: 26px; }
-    h2 { font-size: 24px; font-weight: 700; }
-    .section { margin-bottom: 20px; }
+    html {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 20px; /* slightly smaller for a cleaner UI */
+    }
+
+    body {
+      margin: 0;
+      background: #000;
+      color: #f5f5f5;
+    }
+
+    .app {
+      padding: 22px 10px 80px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #b0b0b8;
+      margin-bottom: 22px;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 18px 4px 8px;
+    }
+
+    .section {
+      margin-bottom: 18px;
+    }
 
     .bill {
       background: #1c1c1e;
-      padding: 22px 26px;
-      border-bottom: 2px solid #2c2c2e;
+      padding: 18px 22px;
+      border-bottom: 1px solid #2c2c2e;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
     }
-    .bill:active { opacity: 0.85; }
+
+    .bill:active {
+      opacity: 0.85;
+    }
 
     .bill-paid {
       background: #234223;
@@ -34,7 +65,7 @@
     }
 
     .bill-name {
-      font-size: 28px;
+      font-size: 25px;
       font-weight: 700;
       display: flex;
       align-items: center;
@@ -42,26 +73,35 @@
       flex-wrap: wrap;
     }
 
-    .meta {
-      color: #b0b0b8;
+    .auto-pay {
       font-size: 18px;
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
+      opacity: 0.75;
     }
 
     .badge {
-      padding: 4px 10px;
+      padding: 3px 8px;
       border-radius: 999px;
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 700;
     }
-    .badge-overdue { background: #ff3b30; color: #fff; }
-    .badge-today { background: #ff9f0a; color: #000; }
 
-    .auto-pay {
-      font-size: 20px;
-      opacity: 0.75;
+    .badge-overdue {
+      background: #ff3b30;
+      color: #fff;
+    }
+
+    .badge-today {
+      background: #ff9f0a;
+      color: #000;
+    }
+
+    .meta {
+      color: #b0b0b8;
+      font-size: 16px;
+      line-height: 1.2;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
     }
 
     /* Collapsible paid section */
@@ -69,12 +109,56 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      margin: 20px 4px 8px;
+      margin: 18px 4px 8px;
       cursor: pointer;
       user-select: none;
     }
-    .chevron { width: 24px; text-align: center; font-weight: 900; }
-    .paid-container.is-collapsed { display: none; }
+
+    .chevron {
+      width: 24px;
+      text-align: center;
+      font-weight: 900;
+    }
+
+    .paid-container.is-collapsed {
+      display: none;
+    }
+
+    /* Inline pay UI (appears under clicked bill) */
+    .pay-inline {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      cursor: default;
+    }
+
+    .pay-inline input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      background: #2c2c2e;
+      color: #fff;
+      font-size: 20px;
+    }
+
+    .pay-inline button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      font-size: 20px;
+      font-weight: 800;
+      background: #ff9f0a;
+      cursor: pointer;
+    }
+
+    .pay-inline button:disabled {
+      background: #3a3a3c;
+      color: #aaa;
+    }
   </style>
 </head>
 
@@ -94,10 +178,18 @@
     </div>
 
     <div class="section">
-      <div class="collapsible-header" id="paidHeader" role="button" tabindex="0" aria-expanded="false">
+      <div
+        class="collapsible-header"
+        id="paidHeader"
+        role="button"
+        tabindex="0"
+        aria-expanded="false"
+      >
         <span class="chevron" id="paidChevron">▸</span>
-        <h2 style="margin:0;">Already paid</h2>
-        <span class="subtitle" id="paidCount" style="margin:0; font-size:18px;"></span>
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <h2 style="margin:0;">Already paid</h2>
+          <span class="subtitle" id="paidCount" style="margin:0; font-size:16px;"></span>
+        </div>
       </div>
 
       <div id="paid" class="paid-container is-collapsed"></div>
@@ -105,7 +197,8 @@
   </div>
 
   <script>
-    let paidOpen = false; // collapsed by default
+    let paidOpen = false;          // paid section collapsed by default
+    let expandedBillId = null;     // inline payment expanded bill
 
     async function fetchStatus() {
       const res = await fetch("/api/GetStatus");
@@ -113,13 +206,13 @@
       return res.json();
     }
 
-    function toPayUrl(bill) {
-      const params = new URLSearchParams({
-        billId: bill.id,
-        name: bill.name || "",
-        lastAmount: String(bill.lastAmount || 0),
+    async function logPayment(billId, amount) {
+      const res = await fetch("/api/LogPayment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billId, amount })
       });
-      return `/pay.html?${params.toString()}`;
+      if (!res.ok) throw new Error("Failed to save payment");
     }
 
     function renderList(containerId, list, paid = false) {
@@ -166,9 +259,62 @@
 
         div.append(name, meta);
 
-        if (!paid) {
-          div.onclick = () => { window.location.href = toPayUrl(bill); };
+        // Paid items don't expand
+        if (paid) {
+          container.appendChild(div);
+          return;
         }
+
+        // Inline pay UI (only for expanded bill)
+        const isExpanded = expandedBillId === bill.id;
+        if (isExpanded) {
+          const inline = document.createElement("div");
+          inline.className = "pay-inline";
+
+          const input = document.createElement("input");
+          input.type = "number";
+          input.inputMode = "decimal";
+          input.placeholder = bill.lastAmount ? String(bill.lastAmount) : "Amount";
+          input.value = bill.lastAmount ? String(bill.lastAmount) : "";
+
+          const btn = document.createElement("button");
+          btn.textContent = "Pay";
+
+          // Prevent collapsing when interacting with input
+          input.onclick = (e) => e.stopPropagation();
+
+          btn.onclick = async (e) => {
+            e.stopPropagation(); // don't collapse on pay click
+            btn.disabled = true;
+
+            const amount = Number(input.value);
+            if (!Number.isFinite(amount) || amount <= 0) {
+              btn.disabled = false;
+              alert("Enter a valid amount greater than 0.");
+              return;
+            }
+
+            try {
+              await logPayment(bill.id, amount);
+              expandedBillId = null; // collapse after paying
+              load();
+            } catch (err) {
+              btn.disabled = false;
+              alert("Failed to save payment.");
+            }
+          };
+
+          inline.append(input, btn);
+          div.appendChild(inline);
+
+          setTimeout(() => input.focus(), 0);
+        }
+
+        // Toggle expand/collapse on card click
+        div.onclick = () => {
+          expandedBillId = (expandedBillId === bill.id) ? null : bill.id;
+          load();
+        };
 
         container.appendChild(div);
       });
@@ -192,7 +338,7 @@
         updatePaidUI();
       };
 
-      header.onkeydown = e => {
+      header.onkeydown = (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           paidOpen = !paidOpen;
