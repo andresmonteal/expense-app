@@ -8,7 +8,7 @@
   <style>
     html {
       font-family: system-ui, -apple-system, sans-serif;
-      font-size: 20px; /* slightly smaller for a cleaner UI */
+      font-size: 20px;
     }
 
     body {
@@ -17,9 +17,8 @@
       color: #f5f5f5;
     }
 
-    /* Main app container */
     .app {
-      padding: 22px 10px 120px; /* extra bottom space for frosted bar */
+      padding: 22px 10px 120px;
     }
 
     h1 {
@@ -43,7 +42,6 @@
       margin-bottom: 18px;
     }
 
-    /* Bill cards */
     .bill {
       background: #1c1c1e;
       padding: 18px 22px;
@@ -106,7 +104,6 @@
       flex-wrap: wrap;
     }
 
-    /* Paid collapsible */
     .collapsible-header {
       display: flex;
       align-items: center;
@@ -126,7 +123,6 @@
       display: none;
     }
 
-    /* Inline pay UI */
     .pay-inline {
       margin-top: 10px;
       display: flex;
@@ -162,7 +158,6 @@
       color: #aaa;
     }
 
-    /* Frosted glass bottom bar */
     .bottom-glass {
       position: fixed;
       left: 0;
@@ -170,13 +165,9 @@
       bottom: 0;
       z-index: 50;
       padding: 14px 12px calc(14px + env(safe-area-inset-bottom));
-
-      /* Frosted glass effect */
       background: rgba(28, 28, 30, 0.45);
       -webkit-backdrop-filter: blur(18px) saturate(140%);
       backdrop-filter: blur(18px) saturate(140%);
-
-      /* Separation */
       border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
@@ -192,37 +183,19 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     }
 
-    .bottom-glass .hint {
-      color: rgba(245, 245, 245, 0.85);
-      font-size: 16px;
-      margin: 0;
-    }
-
     .bottom-glass .right {
       color: rgba(176, 176, 184, 0.9);
       font-size: 14px;
       white-space: nowrap;
-    }
-    
-    .bottom-glass .pill.clickable {
       cursor: pointer;
     }
 
-    .bottom-glass .pill.clickable:active {
-      transform: scale(0.98);
-    }
-
     .auth-link {
-      color: rgba(245, 245, 245, 0.95);
+      color: rgba(176, 176, 184, 0.9);
       font-size: 14px;
       font-weight: 700;
       text-decoration: none;
     }
-
-    .auth-link.muted {
-      color: rgba(176, 176, 184, 0.9);
-    }
-    
   </style>
 </head>
 
@@ -252,20 +225,27 @@
     </div>
   </div>
 
-  <!-- Frosted bottom bar -->
   <div class="bottom-glass">
     <div class="pill">
-      <a href="/.auth/logout" class="auth-link muted">Sign out</a>
-      <span class="right clickable" onclick="goToExpenses()">Expenses →</span>
+      <a href="/.auth/logout" class="auth-link">Sign out</a>
+      <span class="right" onclick="goToExpenses()">Expenses →</span>
     </div>
   </div>
 
   <script>
-    let paidOpen = false;          // paid section collapsed by default
-    let expandedBillId = null;     // inline payment expanded bill
+    let paidOpen = false;
+    let expandedBillId = null;
+
+    function formatPaidAt(iso) {
+      if (!iso) return "";
+      return new Date(iso).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric"
+      });
+    }
 
     async function fetchStatus() {
-      const res = await fetch("/api/GetStatus");
+      const res = await fetch("/api/GetStatus", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to load status");
       return res.json();
     }
@@ -294,16 +274,12 @@
 
         const name = document.createElement("div");
         name.className = "bill-name";
-
-        const title = document.createElement("span");
-        title.textContent = bill.name;
-        name.appendChild(title);
+        name.textContent = bill.name;
 
         if (bill.autoPay) {
           const auto = document.createElement("span");
           auto.className = "auto-pay";
           auto.textContent = "⚙️";
-          auto.title = "Automatic payment enabled";
           name.appendChild(auto);
         }
 
@@ -316,64 +292,51 @@
 
         const meta = document.createElement("div");
         meta.className = "meta";
-        meta.innerHTML = `
-          <span>Last: ${Number(bill.lastAmount || 0).toFixed(2)}</span>
-          <span>Due: ${bill.dueDate || ""}</span>
-        `;
+
+        if (paid) {
+          meta.innerHTML = `
+            <span>Paid: ${formatPaidAt(bill.paidAt)}</span>
+            <span>Amount: ${Number(bill.paidAmount || 0).toFixed(2)}</span>
+          `;
+        } else {
+          meta.innerHTML = `
+            <span>Last: ${Number(bill.lastAmount || 0).toFixed(2)}</span>
+            <span>Due: ${bill.dueDate || ""}</span>
+          `;
+        }
 
         div.append(name, meta);
 
-        // Paid items don't expand
         if (paid) {
           container.appendChild(div);
           return;
         }
 
-        // Inline pay UI (only for expanded bill)
         if (expandedBillId === bill.id) {
           const inline = document.createElement("div");
           inline.className = "pay-inline";
 
           const input = document.createElement("input");
           input.type = "number";
-          input.inputMode = "decimal";
-          input.placeholder = bill.lastAmount ? String(bill.lastAmount) : "Amount";
-          input.value = bill.lastAmount ? String(bill.lastAmount) : "";
+          input.value = bill.lastAmount || "";
 
           const btn = document.createElement("button");
           btn.textContent = "Pay";
 
-          // Prevent collapsing when interacting with input
-          input.onclick = (e) => e.stopPropagation();
-
           btn.onclick = async (e) => {
-            e.stopPropagation(); // don't collapse on pay click
-            btn.disabled = true;
-
+            e.stopPropagation();
             const amount = Number(input.value);
-            if (!Number.isFinite(amount) || amount <= 0) {
-              btn.disabled = false;
-              alert("Enter a valid amount.");
-              return;
-            }
-
-            try {
-              await logPayment(bill.id, amount);
-              expandedBillId = null; // collapse after paying
-              load();
-            } catch (err) {
-              btn.disabled = false;
-              alert("Failed to save payment.");
-            }
+            if (!amount) return;
+            btn.disabled = true;
+            await logPayment(bill.id, amount);
+            expandedBillId = null;
+            load();
           };
 
           inline.append(input, btn);
           div.appendChild(inline);
-
-          setTimeout(() => input.focus(), 0);
         }
 
-        // Toggle expand/collapse on card click
         div.onclick = () => {
           expandedBillId = expandedBillId === bill.id ? null : bill.id;
           load();
@@ -395,27 +358,16 @@
 
     function setupPaidToggle() {
       const header = document.getElementById("paidHeader");
-
       header.onclick = () => {
         paidOpen = !paidOpen;
         updatePaidUI();
       };
-
-      header.onkeydown = (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          paidOpen = !paidOpen;
-          updatePaidUI();
-        }
-      };
-
       updatePaidUI();
     }
 
     async function load() {
       const data = await fetchStatus();
 
-      // Sort pay immediately by most overdue first
       const payNowSorted = [...(data.payImmediately || [])].sort(
         (a, b) => (b.daysOverdue ?? 0) - (a.daysOverdue ?? 0)
       );
