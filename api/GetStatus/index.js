@@ -11,6 +11,44 @@ function todayBogotaUtcDateOnly() {
   ));
 }
 
+function monthWindowBogotaUtc(todayUtc) {
+  // todayUtc is already "Bogota date-only" represented in UTC
+  const y = todayUtc.getUTCFullYear();
+  const m = todayUtc.getUTCMonth();
+  const start = new Date(Date.UTC(y, m, 1, 0, 0, 0));
+  const end = new Date(Date.UTC(y, m + 1, 1, 0, 0, 0));
+  return { start, end };
+}
+
+function getLatestPaymentThisMonth(payments, billId, ownerId, monthStartUtc, nextMonthStartUtc) {
+  const startMs = monthStartUtc.getTime();
+  const endMs = nextMonthStartUtc.getTime();
+  const bid = String(billId || "").trim();
+  const oid = String(ownerId || "").trim();
+
+  let best = null; // { tsMs, timestamp, amount }
+
+  for (const p of (payments || [])) {
+    if (String(p.ownerId || "").trim() !== oid) continue;
+    if (String(p.billId || "").trim() !== bid) continue;
+
+    const tsMs = new Date(p.timestamp).getTime();
+    if (!Number.isFinite(tsMs)) continue;
+
+    if (tsMs < startMs || tsMs >= endMs) continue;
+
+    if (!best || tsMs > best.tsMs) {
+      best = {
+        tsMs,
+        timestamp: p.timestamp,
+        amount: Number(p.amount) || 0
+      };
+    }
+  }
+
+  return best; // null if not paid this month
+}
+
 function parseYMD(ymd) {
   const [y, m, d] = String(ymd || "").split("-").map(Number);
   if (!y || !m || !d) return null;
@@ -90,28 +128,10 @@ function buildLastAmountMap(payments) {
   return map;
 }
 
-function isPaidInWindow(payments, billId, startUtc, endUtc) {
-  const startMs = startUtc.getTime();
-  const endMs = endUtc.getTime();
-
-  for (const p of (payments || [])) {
-    if (String(p.billId) !== String(billId)) continue;
-
-    const tsMs = new Date(p.timestamp).getTime();
-    if (!Number.isFinite(tsMs)) continue;
-
-    if (tsMs >= startMs && tsMs < endMs) return true;
-  }
-  return false;
-}
-
-function subtractDays(dateUtc, days) {
-  return new Date(dateUtc.getTime() - days * DAY_MS);
-}
-
 module.exports = async function (context, req, bills, payments) {
   try {
     const todayUtc = todayBogotaUtcDateOnly();
+    const { start: monthStartUtc, end: nextMonthStartUtc } = monthWindowBogotaUtc(todayUtc);
     const windowEndUtc = new Date(todayUtc.getTime() + 5 * DAY_MS);
 
     const lastAmountMap = buildLastAmountMap(payments || []);
@@ -124,6 +144,7 @@ module.exports = async function (context, req, bills, payments) {
     if (!ownerId) {
       context.res = {
         status: 401,
+        headers: { "Content-Type": "application/json" },
         body: { error: "Not authenticated" }
       };
       return;
@@ -132,6 +153,7 @@ module.exports = async function (context, req, bills, payments) {
     for (const b of (bills || [])) {
       if (!b || b.isActive !== true) continue;
       if (String(b.ownerId) !== String(ownerId)) continue;
+
       const startUtc = parseYMD(b.startDate);
       if (!startUtc) continue;
 
@@ -163,26 +185,16 @@ module.exports = async function (context, req, bills, payments) {
         dueUtc = cycleStartUtc;
       }
 
-      let paidThisCycle;
+      // ✅ Rule: if there's any payment in the current month, it's "already paid"
+      const latestPay = getLatestPaymentThisMonth(
+        payments || [],
+        b.id,
+        ownerId,
+        monthStartUtc,
+        nextMonthStartUtc
+      );
 
-      if (todayUtc < startUtc) {
-        // ✅ allow pre-paying first cycle
-        const prepayWindowStartUtc = subtractDays(startUtc, 35);
-        paidThisCycle = isPaidInWindow(
-          payments || [],
-          b.id,
-          prepayWindowStartUtc,
-          cycleEndUtc
-        );
-      } else {
-        paidThisCycle = isPaidInWindow(
-          payments || [],
-          b.id,
-          cycleStartUtc,
-          cycleEndUtc
-        );
-      }
-
+      const paidThisMonth = !!latestPay;
       const lastAmount = lastAmountMap[String(b.id)]?.amount ?? 0;
 
       const out = {
@@ -196,11 +208,13 @@ module.exports = async function (context, req, bills, payments) {
         startDate: b.startDate,
         frequency: b.frequency,
         lastAmount,
-        paidThisMonth: paidThisCycle,
+        paidThisMonth,
+        paidAt: latestPay ? latestPay.timestamp : null,
+        paidAmount: latestPay ? latestPay.amount : null,
         dueDate: dueUtc.toISOString().slice(0, 10)
       };
 
-      if (paidThisCycle) {
+      if (paidThisMonth) {
         paid.push(out);
         continue;
       }
@@ -211,7 +225,6 @@ module.exports = async function (context, req, bills, payments) {
         continue;
       }
 
-      // Started bills:
       // PayImmediately if due date is today or in the past (overdue logic)
       if (dueUtc.getTime() <= todayUtc.getTime()) {
         const daysOverdue = Math.max(0, daysBetween(dueUtc, todayUtc));
@@ -219,8 +232,7 @@ module.exports = async function (context, req, bills, payments) {
         continue;
       }
 
-      // (Normally unreachable with monthly/yearly cycleStart <= today)
-      // But keep for completeness:
+      // keep for completeness:
       if (dueUtc.getTime() > todayUtc.getTime() && dueUtc.getTime() <= windowEndUtc.getTime()) {
         upcoming.push(out);
       }
