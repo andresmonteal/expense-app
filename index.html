@@ -316,9 +316,20 @@
           const inline = document.createElement("div");
           inline.className = "pay-inline";
 
+          // Prevent collapsing when interacting with inline controls
+          inline.onclick = (e) => e.stopPropagation();
+          inline.onpointerdown = (e) => e.stopPropagation();
+
+
           const input = document.createElement("input");
           input.type = "number";
+          input.placeholder = bill.lastAmount || "Amount";
           input.value = bill.lastAmount || "";
+
+          // Prevent collapsing when interacting with input
+          input.onclick = (e) => e.stopPropagation();
+          input.onpointerdown = (e) => e.stopPropagation();
+          input.onmousedown = (e) => e.stopPropagation();
 
           const btn = document.createElement("button");
           btn.textContent = "Pay";
