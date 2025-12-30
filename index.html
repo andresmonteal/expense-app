@@ -59,9 +59,9 @@
 
     .bill-paid {
       background: #234223;
-      text-decoration: line-through;
       opacity: 0.8;
       cursor: default;
+      /* No line-through styling */
     }
 
     .bill-name {
@@ -236,11 +236,56 @@
     let paidOpen = false;
     let expandedBillId = null;
 
+    // COP currency formatting (no decimals)
+    const copFmt = new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      maximumFractionDigits: 0,
+      minimumFractionDigits: 0
+    });
+
     function formatPaidAt(iso) {
       if (!iso) return "";
       return new Date(iso).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric"
+      });
+    }
+
+    // Digits-only currency input (no '.' allowed). User types digits, we format COP while typing.
+    // Stores the raw digits (integer pesos) in input.dataset.amount
+    function attachCopMoneyMask(inputEl, initialAmount = 0) {
+      inputEl.type = "text";
+      inputEl.inputMode = "numeric";
+      inputEl.autocomplete = "off";
+      inputEl.spellcheck = false;
+
+      inputEl.dataset.amount = String(Number(initialAmount || 0));
+
+      const render = () => {
+        const amount = Number(inputEl.dataset.amount || 0);
+        inputEl.value = copFmt.format(amount);
+        // keep caret at end (simple + predictable)
+        const end = inputEl.value.length;
+        inputEl.setSelectionRange(end, end);
+      };
+
+      render();
+
+      inputEl.addEventListener("input", () => {
+        // keep only digits
+        const digits = String(inputEl.value || "").replace(/\D/g, "");
+        inputEl.dataset.amount = digits ? String(parseInt(digits, 10)) : "0";
+        render();
+      });
+
+      // Extra safety: sanitize paste (still works if browser triggers input anyway)
+      inputEl.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData("text") || "";
+        const digits = text.replace(/\D/g, "");
+        inputEl.dataset.amount = digits ? String(parseInt(digits, 10)) : "0";
+        render();
       });
     }
 
@@ -296,11 +341,11 @@
         if (paid) {
           meta.innerHTML = `
             <span>Paid: ${formatPaidAt(bill.paidAt)}</span>
-            <span>Amount: ${Number(bill.paidAmount || 0).toFixed(2)}</span>
+            <span>Amount: ${copFmt.format(Number(bill.paidAmount || 0))}</span>
           `;
         } else {
           meta.innerHTML = `
-            <span>Last: ${Number(bill.lastAmount || 0).toFixed(2)}</span>
+            <span>Last: ${copFmt.format(Number(bill.lastAmount || 0))}</span>
             <span>Due: ${bill.dueDate || ""}</span>
           `;
         }
@@ -320,11 +365,10 @@
           inline.onclick = (e) => e.stopPropagation();
           inline.onpointerdown = (e) => e.stopPropagation();
 
-
           const input = document.createElement("input");
-          input.type = "number";
-          input.placeholder = bill.lastAmount || "Amount";
-          input.value = bill.lastAmount || "";
+
+          // Initialize with lastAmount (assumed pesos), show as COP currency while typing.
+          attachCopMoneyMask(input, Number(bill.lastAmount || 0));
 
           // Prevent collapsing when interacting with input
           input.onclick = (e) => e.stopPropagation();
@@ -336,7 +380,7 @@
 
           btn.onclick = async (e) => {
             e.stopPropagation();
-            const amount = Number(input.value);
+            const amount = Number(input.dataset.amount || 0); // integer pesos, no decimals
             if (!amount) return;
             btn.disabled = true;
             await logPayment(bill.id, amount);
