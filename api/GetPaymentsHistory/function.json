@@ -1,0 +1,36 @@
+{
+  "bindings": [
+    {
+      "authLevel": "function",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": ["get"]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    },
+    {
+      "name": "payments",
+      "direction": "in",
+      "type": "cosmosDB",
+      "methods": [],
+      "databaseName": "expense-app-db",
+      "containerName": "payments",
+      "connection": "CosmosDB",
+      "sqlQuery": "SELECT * FROM c WHERE IS_DEFINED(c.timestamp) ORDER BY c.timestamp DESC"
+    },
+    {
+      "name": "bills",
+      "direction": "in",
+      "type": "cosmosDB",
+      "methods": [],
+      "databaseName": "expense-app-db",
+      "containerName": "bills",
+      "connection": "CosmosDB",
+      "sqlQuery": "SELECT c.id, c.name, c.ownerId FROM c"
+    }
+  ]
+}

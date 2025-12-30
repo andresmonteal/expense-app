@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Payments History</title>
+
+  <style>
+    html {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 20px;
+    }
+
+    body {
+      margin: 0;
+      background: #000;
+      color: #f5f5f5;
+    }
+
+    .app {
+      padding: 22px 10px 120px;
+      transition: filter 180ms ease;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 0 0 10px;
+    }
+
+    .subtitle {
+      color: #b0b0b8;
+      margin: 0 0 18px;
+      font-size: 16px;
+      line-height: 1.3;
+    }
+
+    .card {
+      background: #1c1c1e;
+      border: 1px solid #2c2c2e;
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .total {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+
+    .muted {
+      color: #b0b0b8;
+      font-size: 14px;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid #2c2c2e;
+    }
+
+    .payment {
+      background: #1c1c1e;
+      padding: 14px 16px;
+      border-bottom: 1px solid #2c2c2e;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .payment:active { opacity: 0.85; }
+    .payment:last-child { border-bottom: none; }
+
+    .payment-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .payment-name {
+      font-weight: 800;
+      font-size: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      font-size: 12px;
+      font-weight: 900;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.85);
+      background: rgba(255,255,255,0.06);
+      white-space: nowrap;
+    }
+
+    .payment-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 14px;
+      color: #b0b0b8;
+    }
+
+    .chart-wrap {
+      background: #1c1c1e;
+      border: 1px solid #2c2c2e;
+      border-radius: 16px;
+      padding: 10px 12px 14px;
+      margin-bottom: 14px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 240px !important;
+    }
+
+    /* Blur effect when bill overlay is open */
+    .is-blurred {
+      filter: blur(10px);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Overlay modal */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px 12px;
+      background: rgba(0,0,0,0.55);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+
+    .overlay.is-open {
+      display: flex;
+    }
+
+    .modal {
+      width: min(920px, 100%);
+      border-radius: 18px;
+      background: rgba(28, 28, 30, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      box-shadow: 0 14px 45px rgba(0,0,0,0.55);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 14px 14px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .modal-title {
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .close {
+      border: none;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.9);
+      font-weight: 900;
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 12px 14px 16px;
+    }
+
+    .modal-body canvas {
+      height: 280px !important;
+    }
+
+    .bottom-glass {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      padding: 14px 12px calc(14px + env(safe-area-inset-bottom));
+      background: rgba(28, 28, 30, 0.45);
+      -webkit-backdrop-filter: blur(18px) saturate(140%);
+      backdrop-filter: blur(18px) saturate(140%);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .bottom-glass .pillbar {
+      background: rgba(44, 44, 46, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 18px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .navlink {
+      color: rgba(176, 176, 184, 0.9);
+      font-size: 14px;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" class="app">
+    <div class="card">
+      <div class="row">
+        <div>
+          <h1 id="title">Total paid</h1>
+          <div class="subtitle" id="subtitle">Select a month in the chart to see its payments.</div>
+        </div>
+        <div class="total" id="totalPaid">$0</div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="muted" style="padding: 6px 2px 10px;">Paid by month</div>
+      <canvas id="monthsChart"></canvas>
+      <div class="muted" style="padding: 10px 2px 0;">
+        Tip: click a bar to switch month.
+      </div>
+    </div>
+
+    <div class="muted" style="margin: 8px 4px 10px;">Payments in selected month</div>
+    <div class="list" id="paymentsList"></div>
+  </div>
+
+  <!-- Bill details overlay -->
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="billTitle">Bill</div>
+          <div class="muted" id="billSubtitle"></div>
+        </div>
+        <button class="close" id="closeBtn" type="button">Close</button>
+      </div>
+      <div class="modal-body">
+        <canvas id="billChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-glass">
+    <div class="pillbar">
+      <a class="navlink" href="/index.html">← This Month</a>
+      <a class="navlink" href="/expenses.html">Expenses →</a>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script>
+    /**
+     * Expected API response from GET /api/GetPaymentsHistory
+     *
+     * {
+     *   "months": [
+     *     {
+     *       "key": "2025-12",                 // YYYY-MM
+     *       "label": "Dec 2025",              // display label
+     *       "totalPaid": 1230000,             // integer COP (no decimals)
+     *       "payments": [
+     *         {
+     *           "id": "payment-id",
+     *           "billId": "bill-id",
+     *           "billName": "Netflix",
+     *           "paidAt": "2025-12-04T12:34:56.000Z",
+     *           "amount": 45000               // integer COP (no decimals)
+     *         }
+     *       ]
+     *     }
+     *   ]
+     * }
+     */
+
+    const copFmt = new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      maximumFractionDigits: 0,
+      minimumFractionDigits: 0
+    });
+
+    function fmtCOP(n) {
+      const v = Number(n || 0);
+      return copFmt.format(Number.isFinite(v) ? v : 0);
+    }
+
+    function monthTitleFromLabel(label) {
+      return `Total paid — ${label}`;
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return "";
+      const d = new Date(iso);
+      return d.toLocaleString("es-CO", { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+    }
+
+    async function fetchPaymentsHistory() {
+      const res = await fetch("/api/GetPaymentsHistory", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to load payments history");
+      return res.json();
+    }
+
+    // State
+    let history = { months: [] };
+    let selectedMonthKey = null;
+    let selectedBillId = null;
+
+    // Charts
+    let monthsChart = null;
+    let billChart = null;
+
+    // Elements
+    const appEl = document.getElementById("app");
+    const titleEl = document.getElementById("title");
+    const subtitleEl = document.getElementById("subtitle");
+    const totalPaidEl = document.getElementById("totalPaid");
+    const listEl = document.getElementById("paymentsList");
+    const overlayEl = document.getElementById("overlay");
+    const closeBtn = document.getElementById("closeBtn");
+    const billTitleEl = document.getElementById("billTitle");
+    const billSubtitleEl = document.getElementById("billSubtitle");
+
+    function getSelectedMonth() {
+      return history.months.find(m => m.key === selectedMonthKey) || history.months[0] || null;
+    }
+
+    function setSelectedMonth(key) {
+      selectedMonthKey = key;
+      const m = getSelectedMonth();
+      if (!m) {
+        titleEl.textContent = "Total paid";
+        subtitleEl.textContent = "No payments yet.";
+        totalPaidEl.textContent = fmtCOP(0);
+        listEl.innerHTML = `<div class="payment"><div class="muted">Nothing here.</div></div>`;
+        return;
+      }
+
+      titleEl.textContent = monthTitleFromLabel(m.label);
+      subtitleEl.textContent = `${m.payments.length} payment(s)`;
+      totalPaidEl.textContent = fmtCOP(m.totalPaid);
+      renderPaymentsList(m);
+      highlightSelectedBar();
+    }
+
+    function highlightSelectedBar() {
+      if (!monthsChart) return;
+      const idx = history.months.findIndex(m => m.key === selectedMonthKey);
+      if (idx < 0) return;
+
+      // Chart.js v4 selection styling: we’ll just set active element
+      monthsChart.setActiveElements([{ datasetIndex: 0, index: idx }]);
+      monthsChart.update();
+    }
+
+    function renderPaymentsList(month) {
+      listEl.innerHTML = "";
+      if (!month.payments.length) {
+        listEl.innerHTML = `<div class="payment"><div class="muted">Nothing here.</div></div>`;
+        return;
+      }
+
+      month.payments.forEach(p => {
+        const row = document.createElement("div");
+        row.className = "payment";
+
+        row.innerHTML = `
+          <div class="payment-top">
+            <div class="payment-name">
+              ${escapeHtml(p.billName || "Bill")}
+              <span class="pill">${fmtCOP(p.amount)}</span>
+            </div>
+            <div class="muted">${formatDateTime(p.paidAt)}</div>
+          </div>
+          <div class="payment-meta">
+            <span>Bill ID: ${escapeHtml(p.billId || "")}</span>
+            <span>Payment ID: ${escapeHtml(p.id || "")}</span>
+          </div>
+        `;
+
+        row.onclick = () => {
+          // toggle overlay on same bill
+          if (selectedBillId === p.billId) {
+            closeBillOverlay();
+          } else {
+            openBillOverlay(p.billId, p.billName);
+          }
+        };
+
+        listEl.appendChild(row);
+      });
+    }
+
+    function openBillOverlay(billId, billName) {
+      selectedBillId = billId;
+
+      // Blur everything behind
+      appEl.classList.add("is-blurred");
+
+      // Show overlay
+      overlayEl.classList.add("is-open");
+      overlayEl.setAttribute("aria-hidden", "false");
+
+      // Build bill series from *all months* for this bill
+      const points = [];
+      history.months.forEach(m => {
+        m.payments
+          .filter(p => p.billId === billId)
+          .forEach(p => points.push({ x: p.paidAt, y: Number(p.amount || 0) }));
+      });
+
+      // Sort chronologically
+      points.sort((a, b) => new Date(a.x) - new Date(b.x));
+
+      billTitleEl.textContent = billName || "Bill";
+      billSubtitleEl.textContent = `${points.length} payment(s) total`;
+
+      renderBillLineChart(points);
+    }
+
+    function closeBillOverlay() {
+      selectedBillId = null;
+      appEl.classList.remove("is-blurred");
+      overlayEl.classList.remove("is-open");
+      overlayEl.setAttribute("aria-hidden", "true");
+    }
+
+    function renderMonthsBarChart() {
+      const labels = history.months.map(m => m.label);
+      const data = history.months.map(m => Number(m.totalPaid || 0));
+
+      const ctx = document.getElementById("monthsChart").getContext("2d");
+
+      if (monthsChart) monthsChart.destroy();
+
+      monthsChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "Total paid",
+            data,
+            borderWidth: 1,
+            borderRadius: 10
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => fmtCOP(ctx.parsed.y)
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: (value) => {
+                  // Short-ish COP labels
+                  try { return fmtCOP(value); } catch { return value; }
+                }
+              }
+            }
+          },
+          onClick: (_, elements) => {
+            if (!elements || !elements.length) return;
+            const idx = elements[0].index;
+            const month = history.months[idx];
+            if (month) setSelectedMonth(month.key);
+          }
+        }
+      });
+    }
+
+    function renderBillLineChart(points) {
+      const ctx = document.getElementById("billChart").getContext("2d");
+      if (billChart) billChart.destroy();
+
+      const labels = points.map(p => {
+        const d = new Date(p.x);
+        return d.toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "2-digit" });
+      });
+
+      const data = points.map(p => p.y);
+
+      billChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "Payment amount",
+            data,
+            tension: 0.25,
+            pointRadius: 4,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => fmtCOP(ctx.parsed.y)
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: (value) => fmtCOP(value)
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // Overlay interactions
+    overlayEl.onclick = () => closeBillOverlay();
+    closeBtn.onclick = () => closeBillOverlay();
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && selectedBillId) closeBillOverlay();
+    });
+
+    async function load() {
+      history = await fetchPaymentsHistory();
+
+      // Defensive: ensure months are sorted chronologically by key
+      history.months = (history.months || []).slice().sort((a, b) => (a.key > b.key ? 1 : -1));
+
+      if (!history.months.length) {
+        titleEl.textContent = "Total paid";
+        subtitleEl.textContent = "No payments yet.";
+        totalPaidEl.textContent = fmtCOP(0);
+        listEl.innerHTML = `<div class="payment"><div class="muted">Nothing here.</div></div>`;
+        return;
+      }
+
+      renderMonthsBarChart();
+
+      // default selection = most recent month
+      const last = history.months[history.months.length - 1];
+      setSelectedMonth(last.key);
+    }
+
+    load();
+  </script>
+</body>
+</html>

@@ -228,6 +228,7 @@
   <div class="bottom-glass">
     <div class="pill">
       <a href="/.auth/logout" class="auth-link">Sign out</a>
+      <span class="right" onclick="goToHistory()">History →</span>
       <span class="right" onclick="goToExpenses()">Expenses →</span>
     </div>
   </div>
@@ -439,6 +440,10 @@
 
     function goToExpenses() {
       window.location.href = "/expenses.html";
+    }
+
+    function goToHistory() {
+      window.location.href = "/payments-history.html";
     }
 
     load();
