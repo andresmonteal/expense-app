@@ -197,6 +197,38 @@
       color: #000;
     }
     .dock-btn:active { transform: scale(0.98); }
+
+    .dock-left-row { display: flex; align-items: center; gap: 10px; }
+    .dock-btn.ghost {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(245, 245, 245, 0.95);
+    }
+
+    .menu-wrap { position: relative; }
+    .menu-pop {
+      position: absolute;
+      right: 0;
+      bottom: 48px;
+      min-width: 160px;
+      background: rgba(28, 28, 30, 0.96);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      box-shadow: 0 14px 45px rgba(0,0,0,0.55);
+      padding: 8px;
+      display: none;
+    }
+    .menu-pop.open { display: block; }
+    .menu-item {
+      display: block;
+      padding: 10px 10px;
+      border-radius: 10px;
+      color: rgba(245,245,245,0.95);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .menu-item:active { opacity: 0.75; }
   </style>
 </head>
 
@@ -215,14 +247,23 @@
   <!-- Frosted bottom bar -->
   <div class="bottom-glass">
     <div class="dock">
-      <div class="dock-left">
-        <p class="dock-title">Expenses</p>
-        <p class="dock-sub" id="count">Loading…</p>
+      <div class="dock-left-row">
+        <div class="dock-btn ghost" onclick="goBack()" aria-label="Back" role="button" tabindex="0">←</div>
+        <div class="dock-left">
+          <p class="dock-title">Expenses</p>
+          <p class="dock-sub" id="count">Loading…</p>
+        </div>
       </div>
 
       <div class="dock-actions">
-        <div class="dock-btn" onclick="goBack()">Bills</div>
-        <div class="dock-btn primary" onclick="toggleCreate()">+ Add expense</div>
+        <div class="dock-btn primary" onclick="toggleCreate()" aria-label="Add expense" role="button" tabindex="0">+</div>
+
+        <div class="menu-wrap">
+          <div class="dock-btn" id="menuBtn" aria-label="Menu" role="button" tabindex="0">⋯</div>
+          <div class="menu-pop" id="menuPop">
+            <a class="menu-item" href="/.auth/logout">Sign out</a>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -259,7 +300,7 @@
     // Helpers
     // ---------------------------
     function goBack() {
-      window.location.href = "/";
+      window.location.href = "/index.html";
     }
 
     function setCountText(text) {
@@ -562,6 +603,28 @@
       renderList(expensesOnly);
       setCountText(`${expensesOnly.length} item${expensesOnly.length === 1 ? "" : "s"}`);
     }
+    // Bottom-menu (⋯)
+    (function setupMenu(){
+      const btn = document.getElementById("menuBtn");
+      const pop = document.getElementById("menuPop");
+      if (!btn || !pop) return;
+
+      function close() { pop.classList.remove("open"); }
+      function toggle() { pop.classList.toggle("open"); }
+
+      btn.onclick = (e) => { e.stopPropagation(); toggle(); };
+      btn.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+        if (e.key === "Escape") close();
+      };
+
+      document.addEventListener("click", (e) => {
+        if (!pop.classList.contains("open")) return;
+        if (pop.contains(e.target) || btn.contains(e.target)) return;
+        close();
+      });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    })();
 
     load().catch(() => {
       document.getElementById("list").textContent = "Failed to load expenses.";

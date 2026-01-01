@@ -230,6 +230,64 @@
       cursor: pointer;
       white-space: nowrap;
     }
+    /* Dock (consistent nav) */
+    .bottom-glass .dock {
+      background: rgba(44, 44, 46, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 18px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .dock-left-row { display: flex; align-items: center; gap: 10px; }
+    .dock-left { display: flex; flex-direction: column; gap: 2px; }
+    .dock-title { font-size: 16px; font-weight: 800; margin: 0; color: rgba(245, 245, 245, 0.95); }
+    .dock-sub { font-size: 13px; margin: 0; color: rgba(176, 176, 184, 0.9); }
+
+    .dock-actions { display: flex; gap: 10px; align-items: center; }
+    .dock-btn {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(44, 44, 46, 0.35);
+      color: #f5f5f5;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .dock-btn:active { transform: scale(0.98); }
+    .dock-btn.ghost { background: transparent; }
+
+    .menu-wrap { position: relative; }
+    .menu-pop {
+      position: absolute;
+      right: 0;
+      bottom: 48px;
+      min-width: 160px;
+      background: rgba(28, 28, 30, 0.96);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      box-shadow: 0 14px 45px rgba(0,0,0,0.55);
+      padding: 8px;
+      display: none;
+    }
+    .menu-pop.open { display: block; }
+    .menu-item {
+      display: block;
+      padding: 10px 10px;
+      border-radius: 10px;
+      color: rgba(245,245,245,0.95);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .menu-item:active { opacity: 0.75; }
   </style>
 </head>
 
@@ -274,9 +332,23 @@
   </div>
 
   <div class="bottom-glass">
-    <div class="pillbar">
-      <a class="navlink" href="/index.html">← This Month</a>
-      <a class="navlink" href="/expenses.html">Expenses →</a>
+    <div class="dock">
+      <div class="dock-left-row">
+        <div class="dock-btn ghost" onclick="goBack()" aria-label="Back" role="button" tabindex="0">←</div>
+        <div class="dock-left">
+          <p class="dock-title">History</p>
+          <p class="dock-sub" id="dockCount">Loading…</p>
+        </div>
+      </div>
+
+      <div class="dock-actions">
+        <div class="menu-wrap">
+          <div class="dock-btn" id="menuBtn" aria-label="Menu" role="button" tabindex="0">⋯</div>
+          <div class="menu-pop" id="menuPop">
+            <a class="menu-item" href="/.auth/logout">Sign out</a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -363,12 +435,18 @@
       selectedMonthKey = key;
       const m = getSelectedMonth();
       if (!m) {
+        const dockCount = document.getElementById("dockCount");
+        if (dockCount) dockCount.textContent = `0 payment(s)`;
+
         titleEl.textContent = "Total paid";
         subtitleEl.textContent = "No payments yet.";
         totalPaidEl.textContent = fmtCOP(0);
         listEl.innerHTML = `<div class="payment"><div class="muted">Nothing here.</div></div>`;
         return;
       }
+
+      const dockCount = document.getElementById("dockCount");
+      if (dockCount) dockCount.textContent = `${m.payments.length} payment(s)`;
 
       titleEl.textContent = monthTitleFromLabel(m.label);
       subtitleEl.textContent = `${m.payments.length} payment(s)`;
@@ -590,6 +668,33 @@
       const last = history.months[history.months.length - 1];
       setSelectedMonth(last.key);
     }
+
+    function goBack() {
+      window.location.href = "/index.html";
+    }
+
+    // Bottom-menu (⋯)
+    (function setupMenu(){
+      const btn = document.getElementById("menuBtn");
+      const pop = document.getElementById("menuPop");
+      if (!btn || !pop) return;
+
+      function close() { pop.classList.remove("open"); }
+      function toggle() { pop.classList.toggle("open"); }
+
+      btn.onclick = (e) => { e.stopPropagation(); toggle(); };
+      btn.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+        if (e.key === "Escape") close();
+      };
+
+      document.addEventListener("click", (e) => {
+        if (!pop.classList.contains("open")) return;
+        if (pop.contains(e.target) || btn.contains(e.target)) return;
+        close();
+      });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    })();
 
     load();
   </script>
