@@ -196,6 +196,63 @@
       font-weight: 700;
       text-decoration: none;
     }
+
+    /* === Dock (consistent nav) === */
+    .bottom-glass .dock {
+      background: rgba(44, 44, 46, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 18px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .dock-left { display: flex; flex-direction: column; gap: 2px; }
+    .dock-title { font-size: 16px; font-weight: 800; margin: 0; color: rgba(245, 245, 245, 0.95); }
+    .dock-sub { font-size: 13px; margin: 0; color: rgba(176, 176, 184, 0.9); }
+
+    .dock-actions { display: flex; gap: 10px; align-items: center; }
+
+    .dock-btn {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(44, 44, 46, 0.35);
+      color: #f5f5f5;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+    }
+    .dock-btn:active { transform: scale(0.98); }
+
+    .menu-wrap { position: relative; }
+    .menu-pop {
+      position: absolute;
+      right: 0;
+      bottom: 48px;
+      min-width: 160px;
+      background: rgba(28, 28, 30, 0.96);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      box-shadow: 0 14px 45px rgba(0,0,0,0.55);
+      padding: 8px;
+      display: none;
+    }
+    .menu-pop.open { display: block; }
+    .menu-item {
+      display: block;
+      padding: 10px 10px;
+      border-radius: 10px;
+      color: rgba(245,245,245,0.95);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .menu-item:active { opacity: 0.75; }
   </style>
 </head>
 
@@ -226,10 +283,23 @@
   </div>
 
   <div class="bottom-glass">
-    <div class="pill">
-      <a href="/.auth/logout" class="auth-link">Sign out</a>
-      <span class="right" onclick="goToHistory()">History →</span>
-      <span class="right" onclick="goToExpenses()">Expenses →</span>
+    <div class="dock">
+      <div class="dock-left">
+        <p class="dock-title">This Month</p>
+        <p class="dock-sub" id="dockSub">Loading…</p>
+      </div>
+
+      <div class="dock-actions">
+        <div class="dock-btn" onclick="goToHistory()">History →</div>
+        <div class="dock-btn" onclick="goToExpenses()">Expenses →</div>
+
+        <div class="menu-wrap">
+          <div class="dock-btn" id="menuBtn" aria-label="Menu" role="button" tabindex="0">⋯</div>
+          <div class="menu-pop" id="menuPop">
+            <a class="menu-item" href="/.auth/logout">Sign out</a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -436,6 +506,13 @@
         `(${(data.paid || []).length})`;
 
       setupPaidToggle();
+
+      // Dock subtitle counter
+      const dueN = payNowSorted.length;
+      const upN = (data.upcoming || []).length;
+      const paidN = (data.paid || []).length;
+      const dockSub = document.getElementById("dockSub");
+      if (dockSub) dockSub.textContent = `${dueN} due • ${upN} upcoming • ${paidN} paid`;
     }
 
     function goToExpenses() {
@@ -445,6 +522,29 @@
     function goToHistory() {
       window.location.href = "/payments-history.html";
     }
+
+    // Bottom-menu (⋯)
+    (function setupMenu(){
+      const btn = document.getElementById("menuBtn");
+      const pop = document.getElementById("menuPop");
+      if (!btn || !pop) return;
+
+      function close() { pop.classList.remove("open"); }
+      function toggle() { pop.classList.toggle("open"); }
+
+      btn.onclick = (e) => { e.stopPropagation(); toggle(); };
+      btn.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+        if (e.key === "Escape") close();
+      };
+
+      document.addEventListener("click", (e) => {
+        if (!pop.classList.contains("open")) return;
+        if (pop.contains(e.target) || btn.contains(e.target)) return;
+        close();
+      });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    })();
 
     load();
   </script>
