@@ -180,9 +180,19 @@ module.exports = async function (context, req, bills, payments) {
         const cycle = computeCycle(todayUtc, startUtc, unit, interval);
         if (!cycle) continue;
 
-        cycleStartUtc = cycle.currentDue;
-        cycleEndUtc = cycle.nextDue;
-        dueUtc = cycleStartUtc;
+        // For "This Month", if the most recent due was in a previous month,
+        // show the next due (the one that belongs to this month / upcoming).
+        let dueCandidate = cycle.currentDue;
+
+        if (cycle.currentDue.getTime() < monthStartUtc.getTime()) {
+          dueCandidate = cycle.nextDue;
+        }
+
+        dueUtc = dueCandidate;
+
+        // keep cycle window consistent with the due date you are showing
+        cycleStartUtc = dueUtc;
+        cycleEndUtc = addByFrequency(dueUtc, unit, interval);
       }
 
       // ✅ Rule: if there's any payment in the current month, it's "already paid"
