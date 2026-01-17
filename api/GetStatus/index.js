@@ -138,6 +138,7 @@ module.exports = async function (context, req, bills, payments) {
 
     const payImmediately = [];
     const upcoming = [];
+    const scheduled = []; // ✅ NEW
     const paid = [];
     const ownerId = getOwnerId(req);
 
@@ -168,8 +169,8 @@ module.exports = async function (context, req, bills, payments) {
         // Not started yet: first due is startDate
         dueUtc = startUtc;
 
-        // show only if within next 5 days
-        if (!(dueUtc.getTime() > todayUtc.getTime() && dueUtc.getTime() <= windowEndUtc.getTime())) {
+        // ✅ show if it falls within this month (not just next 5 days)
+        if (dueUtc.getTime() < monthStartUtc.getTime() || dueUtc.getTime() >= nextMonthStartUtc.getTime()) {
           continue;
         }
 
@@ -229,9 +230,10 @@ module.exports = async function (context, req, bills, payments) {
         continue;
       }
 
+      // ✅ Not started yet, but within this month (validated above)
       if (todayUtc < startUtc) {
-        // not started yet but within next 5 days => upcoming
-        upcoming.push(out);
+        if (dueUtc.getTime() <= windowEndUtc.getTime()) upcoming.push(out);
+        else scheduled.push(out);
         continue;
       }
 
@@ -242,16 +244,23 @@ module.exports = async function (context, req, bills, payments) {
         continue;
       }
 
-      // keep for completeness:
+      // Upcoming = due within next 5 days
       if (dueUtc.getTime() > todayUtc.getTime() && dueUtc.getTime() <= windowEndUtc.getTime()) {
         upcoming.push(out);
+        continue;
+      }
+
+      // Scheduled = after next 5 days but still within this month
+      if (dueUtc.getTime() > windowEndUtc.getTime() && dueUtc.getTime() < nextMonthStartUtc.getTime()) {
+        scheduled.push(out);
+        continue;
       }
     }
 
     context.res = {
       status: 200,
       headers: { "Content-Type": "application/json" },
-      body: { payImmediately, upcoming, paid }
+      body: { payImmediately, upcoming, scheduled, paid } // ✅ NEW
     };
   } catch (err) {
     context.log.error("GetStatus failed:", err);
