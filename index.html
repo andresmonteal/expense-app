@@ -119,6 +119,12 @@
       font-weight: 900;
     }
 
+    /* Generic collapsible container (reusable) */
+    .collapsible-container.is-collapsed {
+      display: none;
+    }
+
+    /* (Kept for backward compatibility; you can remove if you want) */
     .paid-container.is-collapsed {
       display: none;
     }
@@ -270,6 +276,18 @@
       <div id="upcoming"></div>
     </div>
 
+    <!-- ✅ NEW: Scheduled (rest of month), collapsed by default -->
+    <div class="section">
+      <div class="collapsible-header" id="scheduledHeader" role="button" tabindex="0" aria-expanded="false">
+        <span class="chevron" id="scheduledChevron">▸</span>
+        <div style="display:flex; align-items:baseline; gap:10px;">
+          <h2 style="margin:0;">Scheduled (rest of month)</h2>
+          <span class="subtitle" id="scheduledCount" style="margin:0; font-size:16px;"></span>
+        </div>
+      </div>
+      <div id="scheduled" class="collapsible-container is-collapsed"></div>
+    </div>
+
     <div class="section">
       <div class="collapsible-header" id="paidHeader" role="button" tabindex="0" aria-expanded="false">
         <span class="chevron" id="paidChevron">▸</span>
@@ -278,7 +296,7 @@
           <span class="subtitle" id="paidCount" style="margin:0; font-size:16px;"></span>
         </div>
       </div>
-      <div id="paid" class="paid-container is-collapsed"></div>
+      <div id="paid" class="paid-container collapsible-container is-collapsed"></div>
     </div>
   </div>
 
@@ -305,6 +323,7 @@
 
   <script>
     let paidOpen = false;
+    let scheduledOpen = false; // ✅ NEW
     let expandedBillId = null;
 
     // COP currency formatting (no decimals)
@@ -472,23 +491,24 @@
       });
     }
 
-    function updatePaidUI() {
-      const paidEl = document.getElementById("paid");
-      const chevron = document.getElementById("paidChevron");
-      const header = document.getElementById("paidHeader");
+    // ✅ Generic collapsible helpers (used for Scheduled + Paid)
+    function updateCollapsibleUI({ open, containerId, chevronId, headerId }) {
+      const el = document.getElementById(containerId);
+      const chevron = document.getElementById(chevronId);
+      const header = document.getElementById(headerId);
 
-      paidEl.classList.toggle("is-collapsed", !paidOpen);
-      chevron.textContent = paidOpen ? "▾" : "▸";
-      header.setAttribute("aria-expanded", String(paidOpen));
+      el.classList.toggle("is-collapsed", !open);
+      chevron.textContent = open ? "▾" : "▸";
+      header.setAttribute("aria-expanded", String(open));
     }
 
-    function setupPaidToggle() {
-      const header = document.getElementById("paidHeader");
+    function setupCollapsibleToggle({ headerId, getOpen, setOpen, containerId, chevronId }) {
+      const header = document.getElementById(headerId);
       header.onclick = () => {
-        paidOpen = !paidOpen;
-        updatePaidUI();
+        setOpen(!getOpen());
+        updateCollapsibleUI({ open: getOpen(), containerId, chevronId, headerId });
       };
-      updatePaidUI();
+      updateCollapsibleUI({ open: getOpen(), containerId, chevronId, headerId });
     }
 
     async function load() {
@@ -500,19 +520,39 @@
 
       renderList("payImmediately", payNowSorted);
       renderList("upcoming", data.upcoming || []);
+      renderList("scheduled", data.scheduled || []); // ✅ NEW
       renderList("paid", data.paid || [], true);
+
+      document.getElementById("scheduledCount").textContent =
+        `(${(data.scheduled || []).length})`; // ✅ NEW
 
       document.getElementById("paidCount").textContent =
         `(${(data.paid || []).length})`;
 
-      setupPaidToggle();
+      // ✅ collapsibles (keep default collapsed)
+      setupCollapsibleToggle({
+        headerId: "scheduledHeader",
+        containerId: "scheduled",
+        chevronId: "scheduledChevron",
+        getOpen: () => scheduledOpen,
+        setOpen: (v) => (scheduledOpen = v),
+      });
+
+      setupCollapsibleToggle({
+        headerId: "paidHeader",
+        containerId: "paid",
+        chevronId: "paidChevron",
+        getOpen: () => paidOpen,
+        setOpen: (v) => (paidOpen = v),
+      });
 
       // Dock subtitle counter
       const dueN = payNowSorted.length;
       const upN = (data.upcoming || []).length;
+      const schN = (data.scheduled || []).length; // ✅ NEW
       const paidN = (data.paid || []).length;
       const dockSub = document.getElementById("dockSub");
-      if (dockSub) dockSub.textContent = `${dueN} due • ${upN} upcoming • ${paidN} paid`;
+      if (dockSub) dockSub.textContent = `${dueN} due • ${upN} upcoming • ${schN} scheduled • ${paidN} paid`;
     }
 
     function goToExpenses() {
